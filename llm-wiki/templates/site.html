@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Wiki 站点 — LLM Wiki</title>
+<style>
+  :root { --bg:#f6f7f9; --card:#fff; --line:#e2e5ea; --ink:#1f2329; --dim:#6b7280;
+          --blue:#1a5fb4; --blue-bg:#e8f0fe; --green:#1e7e34; --red:#c0392b; --amber:#9a6a00; }
+  * { box-sizing:border-box; }
+  body { margin:0; font:14px/1.6 -apple-system,"Segoe UI","Microsoft YaHei",sans-serif;
+         background:var(--bg); color:var(--ink); }
+  header { background:var(--card); border-bottom:1px solid var(--line); padding:12px 20px;
+           display:flex; gap:20px; align-items:center; flex-wrap:wrap; }
+  header h1 { font-size:16px; margin:0; }
+  header .stat { color:var(--dim); } header .stat b { color:var(--ink); }
+  .tabs { display:flex; gap:6px; }
+  .tab { border:1px solid var(--line); background:var(--card); border-radius:8px;
+         padding:6px 16px; cursor:pointer; font-size:13px; }
+  .tab.active { border-color:var(--blue); background:var(--blue-bg); color:var(--blue); font-weight:600; }
+  main { padding:16px 20px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:10px;
+          padding:14px 18px; margin-bottom:14px; }
+  .browse { display:flex; gap:16px; align-items:flex-start; }
+  .browse-list { width:340px; flex:none; }
+  .browse-list h3 { font-size:12px; color:var(--dim); text-transform:uppercase; margin:14px 4px 6px; }
+  .browse-list details { margin-bottom:4px; }
+  .browse-list summary { font-size:12px; color:var(--dim); text-transform:uppercase; cursor:pointer;
+                         padding:6px 4px; user-select:none; border-radius:6px; }
+  .browse-list summary:hover { color:var(--blue); background:var(--blue-bg); }
+  .browse-tools { display:flex; justify-content:flex-end; margin-bottom:4px; }
+  .browse-tools button { border:1px solid var(--line); background:var(--card); border-radius:6px;
+                         padding:2px 10px; cursor:pointer; font-size:12px; color:var(--dim); }
+  .browse-tools button:hover { color:var(--blue); border-color:var(--blue); }
+  .filters { display:flex; gap:6px; flex-wrap:wrap; margin-bottom:6px; }
+  .filters select { font:inherit; padding:4px 6px; border:1px solid var(--line); border-radius:6px; }
+  .pg { display:block; width:100%; text-align:left; background:var(--card); border:1px solid var(--line);
+        border-radius:8px; padding:8px 12px; margin-bottom:6px; cursor:pointer; }
+  .pg:hover { border-color:var(--blue); }
+  .pg.active { border-color:var(--blue); background:var(--blue-bg); }
+  .pg .s { display:block; color:var(--dim); font-size:12.5px; }
+  .browse-detail { flex:1; min-width:0; }
+  table.fm { border-collapse:collapse; margin:8px 0; }
+  table.fm th, table.fm td { border:1px solid var(--line); padding:3px 10px; font-size:13px; text-align:left; }
+  table.fm th { background:var(--bg); color:var(--dim); font-weight:600; }
+  .body-md pre { background:#0f1115; color:#d7e0ea; border-radius:8px; padding:10px 12px; overflow:auto;
+                 font:12.5px/1.5 ui-monospace,Consolas,monospace; }
+  .body-md code { background:#eef1f5; border-radius:4px; padding:0 4px; font:0.92em ui-monospace,Consolas,monospace; }
+  .body-md pre code { background:none; padding:0; }
+  .body-md table { border-collapse:collapse; }
+  .body-md th, .body-md td { border:1px solid var(--line); padding:3px 10px; }
+  svg.graph { width:100%; max-width:1100px; height:640px; background:var(--card);
+              border:1px solid var(--line); border-radius:10px; }
+  .graph-bar { display:flex; gap:8px; align-items:center; margin-bottom:6px; }
+  .graph-toggle { border:1px solid var(--line); background:var(--card); border-radius:6px;
+                  padding:3px 12px; cursor:pointer; font-size:12.5px; color:var(--dim); }
+  .graph-toggle.on { border-color:var(--blue); color:var(--blue); background:var(--blue-bg); }
+  .graph-stats { margin-left:auto; }
+  .graph-stage { position:relative; height:640px; background:var(--card);
+                 border:1px solid var(--line); border-radius:10px; overflow:hidden; }
+  .graph-stage canvas { width:100%; height:100%; display:block; touch-action:none; }
+  .graph-tip { position:absolute; pointer-events:none; background:var(--ink); color:#fff;
+               font-size:12px; padding:3px 8px; border-radius:6px; max-width:340px; z-index:2; }
+  svg.graph line.edge.link { stroke:#b6c2d2; stroke-width:1.2; }
+  svg.graph line.edge.provenance { stroke:#d8c08a; stroke-width:1.2; stroke-dasharray:4 3; }
+  svg.graph circle.node { fill:var(--blue); cursor:pointer; }
+  svg.graph circle.node.source { fill:var(--green); }
+  svg.graph circle.node.synthesis { fill:var(--amber); }
+  svg.graph text { font-size:10px; fill:var(--ink); pointer-events:none; }
+  .legend { color:var(--dim); font-size:12.5px; margin:6px 0; }
+  .adj-row { padding:4px 0; border-bottom:1px solid var(--line); }
+  .hist { color:var(--dim); font-size:13px; }
+  .hist li { margin:4px 0; }
+  .hint { color:var(--dim); font-size:12.5px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>📚 Wiki 站点</h1>
+  <div class="tabs">
+    <button class="tab active" data-view="browse" type="button">浏览</button>
+    <button class="tab" data-view="graph" type="button">图谱</button>
+    <button class="tab" data-view="history" type="button">历史记录</button>
+    <button class="tab" data-view="overview" type="button">概览</button>
+  </div>
+  <span class="stat">生成时间: <b id="gen"></b></span>
+</header>
+
+<main>
+  <section id="view-browse" class="view"></section>
+  <section id="view-graph" class="view" hidden></section>
+  <section id="view-history" class="view" hidden></section>
+  <section id="view-overview" class="view" hidden></section>
+</main>
+
+<script id="data" type="application/json">{{DATA}}</script>
+<script>
+// 安全模型(§6):全部动态文本经 textContent 注入;唯一的 innerHTML 赋值是
+// page.body_html —— 由构建期的最小 markdown 渲染器产出(先整体实体转义再渲染,
+// 不允许内联原始 HTML;链接 href 已按 http/https/file 白名单过滤)。无运行时加载。
+const DATA = JSON.parse(document.getElementById('data').textContent);
+const SVGNS = 'http://www.w3.org/2000/svg';
+
+function el(tag, cls, text) {
+  const e = document.createElement(tag);
+  if (cls) e.className = cls;
+  if (text !== undefined && text !== null) e.textContent = text;
+  return e;
+}
+document.getElementById('gen').textContent = DATA.generatedAt;
+
+// ---- tab switching ----
+let graphDrawn = false;
+function switchView(name) {
+  document.querySelectorAll('.tab').forEach(t => t.classList.toggle('active', t.dataset.view === name));
+  for (const v of ['browse', 'graph', 'history', 'overview'])
+    document.getElementById('view-' + v).hidden = v !== name;
+  if (name === 'graph' && !graphDrawn) { graphDrawn = true; renderGraph(); }
+}
+document.querySelectorAll('.tab').forEach(t => t.addEventListener('click', () => switchView(t.dataset.view)));
+
+// ---- 浏览 ----
+const browseState = { type: '', issue: '', tag: '', source: '', slug: null, groups: {} };
+function uniq(arr) { return [...new Set(arr)].sort(); }
+function renderBrowse() {
+  const host = document.getElementById('view-browse');
+  host.textContent = '';
+  const wrap = el('div', 'browse');
+  const left = el('div', 'browse-list');
+  const right = el('div', 'browse-detail');
+  wrap.appendChild(left); wrap.appendChild(right);
+  host.appendChild(wrap);
+
+  const filters = el('div', 'filters');
+  const mkSelect = (label, values, key) => {
+    if (!values.length && key !== 'type') return; // 无取值的过滤器(如全库无 issue_type)不渲染空下拉
+    const s = el('select');
+    s.appendChild(el('option', null, label + ': 全部'));
+    s.value = '';
+    const all = s.firstChild; all.value = '';
+    for (const v of values) { const o = el('option', null, v); o.value = v; s.appendChild(o); }
+    s.addEventListener('change', () => { browseState[key] = s.value; renderList(); });
+    filters.appendChild(s);
+  };
+  mkSelect('页型', ['source', 'synthesis', 'concept', 'entity'], 'type');
+  mkSelect('issue_type', uniq(DATA.pages.map(p => p.issue_type).filter(Boolean)), 'issue');
+  mkSelect('tag', uniq(DATA.pages.flatMap(p => p.tags)), 'tag');
+  mkSelect('来源', uniq(DATA.pages.map(p => p.source).filter(Boolean)), 'source');
+  left.appendChild(filters);
+  const tools = el('div', 'browse-tools');
+  const toggleAll = el('button', null, '全部展开');
+  toggleAll.type = 'button';
+  toggleAll.addEventListener('click', () => {
+    const open = toggleAll.textContent === '全部展开';
+    for (const t in browseState.groups) browseState.groups[t].open = open;
+    toggleAll.textContent = open ? '全部收起' : '全部展开';
+  });
+  tools.appendChild(toggleAll);
+  left.appendChild(tools);
+  const listHost = el('div');
+  left.appendChild(listHost);
+
+  function matches(p) {
+    return (!browseState.type || p.type === browseState.type)
+        && (!browseState.issue || p.issue_type === browseState.issue)
+        && (!browseState.tag || p.tags.includes(browseState.tag))
+        && (!browseState.source || p.source === browseState.source);
+  }
+  function renderList() {
+    listHost.textContent = '';
+    browseState.groups = {};
+    for (const type of ['source', 'synthesis', 'concept', 'entity']) {
+      const group = DATA.pages.filter(p => p.type === type && matches(p));
+      if (!group.length) continue;
+      const det = el('details');
+      det.appendChild(el('summary', null, type + ' (' + group.length + ')'));
+      for (const p of group) {
+        const b = el('button', 'pg' + (p.slug === browseState.slug ? ' active' : ''));
+        b.type = 'button';
+        b.appendChild(el('span', null, p.title));
+        b.appendChild(el('span', 's', p.slug + ' · ' + (p.updated_at || '')));
+        b.addEventListener('click', () => { location.hash = '#/page/' + p.slug; });
+        det.appendChild(b);
+      }
+      browseState.groups[type] = det;
+      listHost.appendChild(det);
+    }
+  }
+  renderList();
+  renderDetail(right);
+  browseState.renderList = renderList;
+  browseState.detailHost = right;
+}
+
+function renderDetail(host) {
+  host.textContent = '';
+  const p = DATA.pages.find(x => x.slug === browseState.slug);
+  if (!p) { host.appendChild(el('div', 'card hint', '← 从左侧选择一页。')); return; }
+  const card = el('div', 'card');
+  card.appendChild(el('h2', null, p.title));
+  card.appendChild(el('p', 'hint', p.summary));
+  // frontmatter table
+  const tbl = el('table', 'fm');
+  const row = (k, v) => {
+    if (v === undefined || v === null || v === '' || (Array.isArray(v) && !v.length)) return;
+    const tr = el('tr');
+    tr.appendChild(el('th', null, k));
+    tr.appendChild(el('td', null, Array.isArray(v) ? v.join(', ') : String(v)));
+    tbl.appendChild(tr);
+  };
+  row('slug', p.slug); row('type', p.type); row('created_at', p.created_at); row('updated_at', p.updated_at);
+  row('tags', p.tags); row('aliases', p.aliases); row('kind', p.kind); row('issue_type', p.issue_type);
+  row('relations', (p.relations || []).map(r => r.target + ' (' + r.type + ')'));
+  row('related_topics', p.related_topics); row('source_version', p.source_version);
+  row('source_ref', p.source_ref); row('sources', p.sources);
+  card.appendChild(tbl);
+  // 溯源链
+  const prov = el('div');
+  prov.appendChild(el('h3', null, '溯源链'));
+  if (!p.source_ref && !(p.sources && p.sources.length)) prov.appendChild(el('p', 'hint', '(无)'));
+  if (p.source_ref) prov.appendChild(el('p', null, 'source_ref → ' + p.source_ref));
+  (p.sources || []).forEach(s => prov.appendChild(el('p', null, 'sources → ' + s)));
+  card.appendChild(prov);
+  // 渲染正文(构建期已消毒的 HTML)
+  const body = el('div', 'body-md');
+  body.innerHTML = p.body_html;
+  card.appendChild(body);
+  host.appendChild(card);
+}
+
+function route() {
+  const m = location.hash.match(/^#\/page\/(.+)$/);
+  if (!m) return;
+  const slug = decodeURIComponent(m[1]);
+  const page = DATA.pages.find(p => p.slug === slug);
+  if (!page) return;
+  browseState.slug = slug;
+  switchView('browse');
+  if (browseState.renderList) browseState.renderList();
+  if (browseState.groups[page.type]) browseState.groups[page.type].open = true; // 定位时展开所在分组
+  if (browseState.detailHost) renderDetail(browseState.detailHost);
+}
+window.addEventListener('hashchange', route);
+
+// ---- 图谱 ----
+function renderGraph() {
+  const host = document.getElementById('view-graph');
+  host.textContent = '';
+  if (DATA.graphMode === 'adjacency') {
+    host.appendChild(el('p', 'hint', '页面数超过 500,图谱降级为邻接列表(§6.2)。'));
+    const adj = new Map(DATA.pages.map(p => [p.slug, []]));
+    for (const e of DATA.edges) if (adj.has(e.a)) adj.get(e.a).push(e.b + ' (' + e.kind + ')');
+    for (const p of DATA.pages) {
+      const d = el('div', 'adj-row');
+      d.appendChild(el('b', null, p.slug));
+      d.appendChild(document.createTextNode(' → ' + (adj.get(p.slug).join(', ') || '(无出链)')));
+      host.appendChild(d);
+    }
+    return;
+  }
+  // 力学图谱(canvas 实时模拟,参考 knowledge-extension ui/public/views/graph.js):
+  // 均匀网格斥力(~O(n)/tick)+ 弹簧 + 弱向心;alpha 冷却、交互重加热;平移/缩放相机。
+  const REST = 78, REPULSION = 2600, CUTOFF = 160;
+  const bar = el('div', 'graph-bar');
+  const isoBtn = el('button', 'graph-toggle on', '孤立点'); isoBtn.type = 'button'; isoBtn.title = '显示 / 隐藏没有连线的孤立页';
+  const relayBtn = el('button', 'graph-toggle', '重新布局'); relayBtn.type = 'button';
+  const stats = el('span', 'graph-stats hint');
+  bar.appendChild(isoBtn); bar.appendChild(relayBtn); bar.appendChild(stats);
+  host.appendChild(bar);
+  host.appendChild(el('p', 'legend', '实线 = wikilink 边;虚线 = provenance(sources)边;空心绿圈 = source,实心琥珀/蓝 = 枢纽页(标签只显示枢纽与悬停节点)。滚轮缩放,拖空白平移,拖节点重排,点击节点跳浏览。'));
+  const stage = el('div', 'graph-stage');
+  const canvas = el('canvas');
+  const tip = el('div', 'graph-tip'); tip.hidden = true;
+  stage.appendChild(canvas); stage.appendChild(tip);
+  host.appendChild(stage);
+  const ctx = canvas.getContext('2d');
+
+  let nodes = [], links = [];
+  let cam = { x: 0, y: 0, k: 1 };
+  let alpha = 0, raf = 0, simRunning = false;
+  let hover = null, dragNode = null, pan = null, pressAt = null;
+  let showIsolated = true;
+
+  function rebuild() {
+    const deg = new Map();
+    for (const e of DATA.edges) { deg.set(e.a, (deg.get(e.a) || 0) + 1); deg.set(e.b, (deg.get(e.b) || 0) + 1); }
+    let list = DATA.pages;
+    if (!showIsolated) list = list.filter(p => deg.get(p.slug));
+    const prev = new Map(nodes.map(n => [n.slug, n]));
+    nodes = list.map((p, i) => {
+      const old = prev.get(p.slug);
+      const a = i * 2.399963, r = 24 * Math.sqrt(i + 1); // 黄金角螺旋起点
+      return { slug: p.slug, title: p.title, type: p.type, deg: deg.get(p.slug) || 0,
+               x: old ? old.x : r * Math.cos(a), y: old ? old.y : r * Math.sin(a), vx: 0, vy: 0 };
+    });
+    const bySlug = new Map(nodes.map(n => [n.slug, n]));
+    links = DATA.edges.filter(e => bySlug.has(e.a) && bySlug.has(e.b))
+      .map(e => ({ a: bySlug.get(e.a), b: bySlug.get(e.b), kind: e.kind }));
+    hover = null; tip.hidden = true;
+    stats.textContent = nodes.length + ' 节点 · ' + links.length + ' 边';
+  }
+
+  function tick(forcesOnly) {
+    const grid = new Map();
+    for (let i = 0; i < nodes.length; i++) {
+      const key = Math.floor(nodes[i].x / CUTOFF) + ',' + Math.floor(nodes[i].y / CUTOFF);
+      (grid.get(key) || grid.set(key, []).get(key)).push(i);
+    }
+    for (let i = 0; i < nodes.length; i++) {
+      const n = nodes[i], cx = Math.floor(n.x / CUTOFF), cy = Math.floor(n.y / CUTOFF);
+      for (let gx = cx - 1; gx <= cx + 1; gx++) for (let gy = cy - 1; gy <= cy + 1; gy++) {
+        for (const j of grid.get(gx + ',' + gy) || []) {
+          if (j <= i) continue;
+          const m = nodes[j];
+          let dx = n.x - m.x, dy = n.y - m.y, d2 = dx * dx + dy * dy;
+          if (d2 > CUTOFF * CUTOFF) continue;
+          if (d2 < 0.01) { dx = 0.1; dy = 0.1; d2 = 0.02; }
+          const d = Math.sqrt(d2), f = (REPULSION * alpha) / d2 / d;
+          n.vx += dx * f; n.vy += dy * f; m.vx -= dx * f; m.vy -= dy * f;
+        }
+      }
+    }
+    for (const e of links) {
+      const dx = e.b.x - e.a.x, dy = e.b.y - e.a.y;
+      const d = Math.sqrt(dx * dx + dy * dy) || 0.01;
+      const f = ((d - REST) / d) * 0.07 * alpha;
+      e.a.vx += dx * f; e.a.vy += dy * f; e.b.vx -= dx * f; e.b.vy -= dy * f;
+    }
+    for (const n of nodes) {
+      n.vx -= n.x * 0.012 * alpha; n.vy -= n.y * 0.012 * alpha;
+      if (n === dragNode) { n.vx = 0; n.vy = 0; continue; }
+      n.vx *= 0.85; n.vy *= 0.85; n.x += n.vx; n.y += n.vy;
+    }
+    alpha *= 0.985;
+    if (forcesOnly) return;
+    draw();
+    if (alpha > 0.004 || dragNode) raf = requestAnimationFrame(() => tick(false));
+    else simRunning = false;
+  }
+  function reheat(a) {
+    alpha = Math.max(alpha, a);
+    if (!simRunning) { simRunning = true; cancelAnimationFrame(raf); tick(false); }
+  }
+
+  function sizeCanvas() {
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = Math.max(1, Math.round(stage.clientWidth * dpr));
+    canvas.height = Math.max(1, Math.round(stage.clientHeight * dpr));
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  function fitView() {
+    if (!nodes.length) return;
+    let x0 = 1e9, y0 = 1e9, x1 = -1e9, y1 = -1e9;
+    for (const n of nodes) { x0 = Math.min(x0, n.x); y0 = Math.min(y0, n.y); x1 = Math.max(x1, n.x); y1 = Math.max(y1, n.y); }
+    const w = Math.max(x1 - x0, 80), h = Math.max(y1 - y0, 80);
+    cam.k = Math.max(0.15, Math.min(stage.clientWidth / (w + 120), stage.clientHeight / (h + 120), 1.4));
+    cam.x = stage.clientWidth / 2 - ((x0 + x1) / 2) * cam.k;
+    cam.y = stage.clientHeight / 2 - ((y0 + y1) / 2) * cam.k;
+  }
+  const toWorld = (mx, my) => ({ x: (mx - cam.x) / cam.k, y: (my - cam.y) / cam.k });
+  const radius = n => Math.min(4 + 1.6 * Math.sqrt(n.deg), 12);
+  function nodeAt(p) {
+    for (let i = nodes.length - 1; i >= 0; i--) {
+      const n = nodes[i], r = radius(n) + 3;
+      if ((n.x - p.x) * (n.x - p.x) + (n.y - p.y) * (n.y - p.y) <= r * r) return n;
+    }
+    return null;
+  }
+
+  function draw() {
+    const w = stage.clientWidth, h = stage.clientHeight;
+    ctx.clearRect(0, 0, w, h);
+    ctx.save();
+    ctx.translate(cam.x, cam.y); ctx.scale(cam.k, cam.k);
+    for (const e of links) {
+      ctx.beginPath();
+      ctx.strokeStyle = e.kind === 'provenance' ? '#d8c08a' : '#b6c2d2';
+      ctx.setLineDash(e.kind === 'provenance' ? [4, 3] : []);
+      ctx.lineWidth = 1.2;
+      ctx.moveTo(e.a.x, e.a.y); ctx.lineTo(e.b.x, e.b.y); ctx.stroke();
+    }
+    ctx.setLineDash([]);
+    for (const n of nodes) {
+      const r = radius(n);
+      ctx.beginPath(); ctx.arc(n.x, n.y, r, 0, 6.2832);
+      if (n.type === 'source') { ctx.fillStyle = '#fff'; ctx.strokeStyle = '#1e7e34'; ctx.lineWidth = 1.6; ctx.fill(); ctx.stroke(); }
+      else { ctx.fillStyle = n.type === 'synthesis' ? '#9a6a00' : '#1a5fb4'; ctx.fill(); }
+      if (n.type !== 'source' || n === hover) {
+        ctx.fillStyle = '#1f2329'; ctx.font = '10px sans-serif';
+        ctx.fillText(n.slug, n.x + r + 3, n.y + 3);
+      }
+    }
+    if (hover) {
+      ctx.beginPath(); ctx.arc(hover.x, hover.y, radius(hover) + 3, 0, 6.2832);
+      ctx.strokeStyle = '#1a5fb4'; ctx.lineWidth = 1.5; ctx.stroke();
+    }
+    ctx.restore();
+  }
+
+  canvas.addEventListener('pointerdown', ev => {
+    const p = toWorld(ev.offsetX, ev.offsetY);
+    pressAt = { x: ev.offsetX, y: ev.offsetY, moved: false };
+    const n = nodeAt(p);
+    if (n) dragNode = n; else pan = { x: ev.offsetX, y: ev.offsetY, cx: cam.x, cy: cam.y };
+    canvas.setPointerCapture(ev.pointerId);
+  });
+  canvas.addEventListener('pointermove', ev => {
+    if (pressAt && Math.hypot(ev.offsetX - pressAt.x, ev.offsetY - pressAt.y) > 4) pressAt.moved = true;
+    if (dragNode) {
+      const p = toWorld(ev.offsetX, ev.offsetY);
+      dragNode.x = p.x; dragNode.y = p.y;
+      reheat(0.02);
+      return;
+    }
+    if (pan) { cam.x = pan.cx + ev.offsetX - pan.x; cam.y = pan.cy + ev.offsetY - pan.y; draw(); return; }
+    const n = nodeAt(toWorld(ev.offsetX, ev.offsetY));
+    if (n !== hover) {
+      hover = n;
+      if (n) { tip.textContent = n.slug + (n.title && n.title !== n.slug ? ' — ' + n.title : ''); tip.hidden = false; }
+      else tip.hidden = true;
+      draw();
+    }
+    if (n) { tip.style.left = (ev.offsetX + 12) + 'px'; tip.style.top = (ev.offsetY + 12) + 'px'; }
+    canvas.style.cursor = n ? 'pointer' : 'default';
+  });
+  canvas.addEventListener('pointerup', () => {
+    if (dragNode && pressAt && !pressAt.moved) location.hash = '#/page/' + dragNode.slug;
+    dragNode = null; pan = null; pressAt = null;
+  });
+  canvas.addEventListener('wheel', ev => {
+    ev.preventDefault();
+    const k2 = Math.max(0.15, Math.min(4, cam.k * (ev.deltaY < 0 ? 1.12 : 1 / 1.12)));
+    const p = { x: ev.offsetX, y: ev.offsetY };
+    cam.x = p.x - (p.x - cam.x) * (k2 / cam.k);
+    cam.y = p.y - (p.y - cam.y) * (k2 / cam.k);
+    cam.k = k2;
+    draw();
+  }, { passive: false });
+  window.addEventListener('resize', () => { sizeCanvas(); draw(); });
+
+  isoBtn.addEventListener('click', () => {
+    showIsolated = !showIsolated;
+    isoBtn.classList.toggle('on', showIsolated);
+    rebuild(); fitView(); draw(); reheat(0.1);
+  });
+  relayBtn.addEventListener('click', () => {
+    nodes = []; rebuild();
+    alpha = 1;
+    for (let i = 0; i < 180; i++) tick(true);
+    fitView(); reheat(0.3);
+  });
+
+  rebuild();
+  sizeCanvas();
+  alpha = 1;
+  for (let i = 0; i < 300; i++) tick(true); // 预热:只算物理不绘制
+  fitView();
+  reheat(0.15); // 余温继续微调
+}
+
+// ---- 历史记录 ----
+function renderHistory() {
+  const host = document.getElementById('view-history');
+  host.textContent = '';
+  const items = [];
+  for (const d of DATA.decisions)
+    items.push({ ts: String(d.ts || ''), text: (d.actor || '?') + ' | ' + (d.action || '?') + ' | ' + (d.page || '') + (d.reason ? ' | ' + d.reason : ''), kind: 'decision' });
+  for (const l of DATA.log) {
+    const m = String(l).match(/^## \[(.*?)\] (.*)$/);
+    items.push({ ts: m ? m[1] : '', text: m ? m[2] : String(l), kind: 'log' });
+  }
+  items.sort((a, b) => a.ts < b.ts ? 1 : a.ts > b.ts ? -1 : 0);
+  const card = el('div', 'card');
+  card.appendChild(el('h3', null, '时间线(decisions.jsonl + log.md,新→旧)'));
+  const ul = el('ul', 'hist');
+  if (!items.length) ul.appendChild(el('li', null, '(无记录)'));
+  for (const it of items) ul.appendChild(el('li', null, '[' + (it.ts || '?') + '] ' + (it.kind === 'decision' ? '⚖ ' : '📜 ') + it.text));
+  card.appendChild(ul);
+  host.appendChild(card);
+}
+
+// ---- 概览 ----
+function renderOverview() {
+  const host = document.getElementById('view-overview');
+  host.textContent = '';
+  const counts = {};
+  for (const p of DATA.pages) counts[p.type] = (counts[p.type] || 0) + 1;
+  const c1 = el('div', 'card');
+  c1.appendChild(el('h3', null, '页型统计(approved ' + DATA.pages.length + ' 页)'));
+  const t1 = el('table', 'fm');
+  for (const ty of ['source', 'synthesis', 'concept', 'entity']) {
+    const tr = el('tr'); tr.appendChild(el('th', null, ty)); tr.appendChild(el('td', null, String(counts[ty] || 0))); t1.appendChild(tr);
+  }
+  c1.appendChild(t1);
+  host.appendChild(c1);
+
+  const c2 = el('div', 'card');
+  c2.appendChild(el('h3', null, 'run 历史(runs.jsonl)'));
+  if (!DATA.runs.length) c2.appendChild(el('p', 'hint', '(无 run 记录)'));
+  const t2 = el('table', 'fm');
+  for (const r of DATA.runs) {
+    const tr = el('tr');
+    tr.appendChild(el('th', null, String(r.ts || '?')));
+    tr.appendChild(el('td', null, String(r.status || '?') + ' — ' + JSON.stringify(r.stats || {})));
+    t2.appendChild(tr);
+  }
+  if (DATA.runs.length) c2.appendChild(t2);
+  host.appendChild(c2);
+
+  const c3 = el('div', 'card');
+  c3.appendChild(el('h3', null, '健康指标'));
+  c3.appendChild(el('p', null, '孤立页(无入链): ' + DATA.health.orphans.length + ' · 悬空链: ' + DATA.health.dangling.length));
+  const u1 = el('ul', 'hist');
+  DATA.health.orphans.forEach(o => u1.appendChild(el('li', null, 'orphan: ' + o)));
+  DATA.health.dangling.forEach(d => u1.appendChild(el('li', null, 'dangling: ' + d.page + ' → [[' + d.target + ']]')));
+  c3.appendChild(u1);
+  host.appendChild(c3);
+}
+
+renderBrowse();
+renderHistory();
+renderOverview();
+route();
+</script>
+</body>
+</html>

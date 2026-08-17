@@ -1,0 +1,1106 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>llm-wiki 教学手册 · v1.1</title>
+<style>
+/* ============ 基调:中式编辑手册 ============ */
+:root{
+  --paper:#f6f1e5;
+  --paper-2:#efe7d3;
+  --paper-3:#e9dfc7;
+  --ink:#221e16;
+  --ink-soft:#5c5340;
+  --ink-faint:#8a7f68;
+  --cinnabar:#b23a2a;      /* 朱砂 · 使用者之旅 */
+  --cinnabar-deep:#8f2c1f;
+  --dai:#2f4a63;           /* 黛蓝 · 开发者之旅 */
+  --dai-deep:#233850;
+  --gold:#a8842c;
+  --line:#d8cdb2;
+  --code-bg:#221e16;
+  --code-ink:#e8dfc8;
+  --serif:"Noto Serif SC","Source Han Serif SC","Source Han Serif CN","Songti SC","STSong","SimSun",serif;
+  --mono:"JetBrains Mono","Cascadia Code","Sarasa Mono SC",Consolas,"Courier New",monospace;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{
+  font-family:var(--serif);
+  background:var(--paper);
+  color:var(--ink);
+  line-height:1.85;
+  font-size:16.5px;
+  overflow-x:hidden;
+}
+/* 纸面肌理 */
+body::before{
+  content:"";position:fixed;inset:0;pointer-events:none;z-index:1000;opacity:.35;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='140' height='140'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0.05 0'/%3E%3C/filter%3E%3Crect width='140' height='140' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+::selection{background:var(--cinnabar);color:var(--paper)}
+
+/* ============ 阅读进度条 ============ */
+#progress{position:fixed;top:0;left:0;height:3px;width:0%;z-index:999;
+  background:linear-gradient(90deg,var(--cinnabar),var(--dai));transition:width .1s linear}
+
+/* ============ 布局 ============ */
+#layout{display:flex;min-height:100vh}
+/* ---- 侧边目录 ---- */
+#toc{
+  position:fixed;top:0;left:0;bottom:0;width:264px;z-index:50;
+  background:var(--paper-2);border-right:1px solid var(--line);
+  padding:2rem 1.4rem;overflow-y:auto;
+}
+#toc .toc-brand{font-size:.78rem;letter-spacing:.35em;color:var(--ink-faint);margin-bottom:.3rem}
+#toc .toc-title{font-size:1.25rem;font-weight:700;letter-spacing:.05em;margin-bottom:1.6rem;
+  padding-bottom:1rem;border-bottom:2px solid var(--ink)}
+#toc a{display:block;color:var(--ink-soft);text-decoration:none;font-size:.86rem;
+  padding:.28rem .6rem;border-left:2px solid transparent;line-height:1.5;
+  transition:all .25s}
+#toc a:hover{color:var(--ink);background:rgba(34,30,22,.05)}
+#toc a.active{color:var(--ink);font-weight:700;border-left-color:var(--gold);background:rgba(168,132,44,.08)}
+#toc .toc-track{margin:1.3rem 0 .5rem;font-size:.72rem;letter-spacing:.3em;font-weight:700}
+#toc .toc-track.u{color:var(--cinnabar)}
+#toc .toc-track.d{color:var(--dai)}
+#toc a .n{display:inline-block;min-width:1.9em;color:var(--ink-faint);font-family:var(--mono);font-size:.72rem}
+#toc a.u.active{border-left-color:var(--cinnabar);background:rgba(178,58,42,.08)}
+#toc a.d.active{border-left-color:var(--dai);background:rgba(47,74,99,.08)}
+
+/* ---- 主栏 ---- */
+#main{flex:1;margin-left:264px;max-width:calc(100% - 264px)}
+article{max-width:780px;margin:0 auto;padding:0 2.4rem 6rem}
+
+/* ============ 封面 ============ */
+#cover{min-height:92vh;display:flex;flex-direction:column;justify-content:center;
+  position:relative;padding:4rem 2.4rem 3rem;max-width:880px;margin:0 auto}
+#cover .vertical{position:absolute;top:3rem;right:1.5rem;writing-mode:vertical-rl;
+  font-size:.95rem;letter-spacing:.6em;color:var(--ink-faint)}
+#cover .kicker{font-size:.8rem;letter-spacing:.5em;color:var(--cinnabar);font-weight:700;
+  margin-bottom:1.2rem;animation:rise .8s ease both}
+#cover h1{font-size:clamp(2.6rem,6vw,4.4rem);line-height:1.15;font-weight:900;
+  letter-spacing:.02em;animation:rise .8s .1s ease both}
+#cover h1 .en{display:block;font-size:.32em;font-weight:400;letter-spacing:.42em;
+  color:var(--ink-soft);margin-top:.8rem;font-family:var(--mono)}
+#cover .lede{margin-top:1.8rem;font-size:1.06rem;color:var(--ink-soft);max-width:34em;
+  animation:rise .8s .2s ease both}
+#cover .seal{
+  position:absolute;top:4.2rem;right:3.2rem;width:92px;height:92px;
+  background:var(--cinnabar);color:var(--paper);
+  display:flex;align-items:center;justify-content:center;text-align:center;
+  font-weight:900;font-size:1.28rem;line-height:1.25;letter-spacing:.1em;
+  transform:rotate(-6deg);border-radius:6px;
+  box-shadow:0 4px 18px rgba(178,58,42,.35), inset 0 0 0 3px rgba(246,241,229,.35);
+  animation:stamp .7s .5s cubic-bezier(.2,2.2,.4,1) both}
+@keyframes stamp{from{transform:rotate(-6deg) scale(2.2);opacity:0}to{transform:rotate(-6deg) scale(1);opacity:1}}
+@keyframes rise{from{transform:translateY(24px);opacity:0}to{transform:none;opacity:1}}
+#cover .tracks{display:grid;grid-template-columns:1fr 1fr;gap:1.2rem;margin-top:3rem;
+  animation:rise .8s .35s ease both}
+#cover .track-card{border:1px solid var(--line);background:var(--paper-2);padding:1.4rem 1.5rem;
+  text-decoration:none;color:var(--ink);position:relative;overflow:hidden;transition:transform .3s,box-shadow .3s}
+#cover .track-card::before{content:"";position:absolute;left:0;top:0;bottom:0;width:4px}
+#cover .track-card.u::before{background:var(--cinnabar)}
+#cover .track-card.d::before{background:var(--dai)}
+#cover .track-card:hover{transform:translateY(-4px);box-shadow:0 12px 30px rgba(34,30,22,.12)}
+#cover .track-card .t-label{font-size:.72rem;letter-spacing:.3em;font-weight:700}
+#cover .track-card.u .t-label{color:var(--cinnabar)}
+#cover .track-card.d .t-label{color:var(--dai)}
+#cover .track-card .t-name{font-size:1.35rem;font-weight:900;margin:.3rem 0 .4rem}
+#cover .track-card .t-desc{font-size:.85rem;color:var(--ink-soft);line-height:1.7}
+#cover .meta{margin-top:2.6rem;font-family:var(--mono);font-size:.74rem;color:var(--ink-faint);
+  animation:rise .8s .45s ease both}
+
+/* ============ 章节通用 ============ */
+section.chapter{padding-top:4.5rem;scroll-margin-top:2rem}
+.reveal{opacity:0;transform:translateY(26px);transition:opacity .7s ease,transform .7s ease}
+.reveal.in{opacity:1;transform:none}
+.ch-head{margin-bottom:2.2rem;position:relative}
+.ch-head .ch-track{font-size:.72rem;letter-spacing:.35em;font-weight:700;margin-bottom:.5rem}
+.ch-head.u .ch-track{color:var(--cinnabar)}
+.ch-head.d .ch-track{color:var(--dai)}
+.ch-head h2{font-size:2rem;font-weight:900;line-height:1.3;position:relative;z-index:2}
+.ch-head .ch-num{
+  position:absolute;top:-1.6rem;left:-1.2rem;font-size:5.6rem;font-weight:900;line-height:1;
+  color:transparent;-webkit-text-stroke:1.5px var(--line);z-index:1;
+  font-family:var(--mono);pointer-events:none;user-select:none}
+.ch-head .ch-sub{margin-top:.6rem;font-size:.9rem;color:var(--ink-faint)}
+.ch-head::after{content:"";display:block;height:2px;width:64px;margin-top:1.1rem;background:var(--gold)}
+
+/* 轨道分隔扉页 */
+.track-divider{padding:7rem 0 5rem;text-align:left;position:relative}
+.track-divider .td-en{font-family:var(--mono);font-size:.78rem;letter-spacing:.5em;margin-bottom:.8rem}
+.track-divider.u .td-en{color:var(--cinnabar)}
+.track-divider.d .td-en{color:var(--dai)}
+.track-divider h2{font-size:clamp(2.4rem,5vw,3.6rem);font-weight:900}
+.track-divider .td-note{margin-top:1rem;color:var(--ink-soft);max-width:32em}
+.track-divider::after{content:"";display:block;height:1px;background:var(--line);margin-top:3.4rem}
+
+/* ============ 正文排版 ============ */
+article h3{font-size:1.32rem;font-weight:900;margin:2.6rem 0 .9rem;padding-left:.85rem;
+  border-left:4px solid var(--gold);line-height:1.4}
+article h4{font-size:1.05rem;font-weight:700;margin:1.8rem 0 .6rem}
+article p{margin:.85rem 0}
+article p.lead{font-size:1.08rem;color:var(--ink-soft)}
+article ul,article ol{margin:.85rem 0 .85rem 1.6rem}
+article li{margin:.4rem 0}
+article strong{font-weight:700;color:var(--ink)}
+article em{color:var(--ink-soft)}
+a.inl{color:var(--cinnabar-deep);text-decoration:none;border-bottom:1px dotted var(--cinnabar)}
+a.inl:hover{background:rgba(178,58,42,.1)}
+code{font-family:var(--mono);font-size:.84em;background:var(--paper-3);
+  padding:.1em .4em;border-radius:3px;color:var(--cinnabar-deep)}
+pre{background:var(--code-bg);color:var(--code-ink);padding:1.2rem 1.4rem;margin:1.2rem 0;
+  overflow-x:auto;font-family:var(--mono);font-size:.82rem;line-height:1.7;border-radius:4px;
+  box-shadow:0 6px 20px rgba(34,30,22,.15)}
+pre code{background:none;padding:0;color:inherit;font-size:inherit}
+pre.diagram{background:var(--paper-2);color:var(--ink);border:1px solid var(--line);
+  box-shadow:none;font-size:.78rem}
+blockquote{margin:1.3rem 0;padding:.9rem 1.3rem;background:rgba(168,132,44,.07);
+  border-left:3px solid var(--gold);color:var(--ink-soft);font-size:.94rem}
+blockquote p{margin:.3rem 0}
+hr{border:none;height:1px;background:var(--line);margin:2.6rem 0}
+
+/* 书版式表格(三线表) */
+.tbl-wrap{overflow-x:auto;margin:1.3rem 0}
+table{width:100%;border-collapse:collapse;font-size:.9rem}
+thead th{font-weight:700;text-align:left;padding:.6rem .8rem;
+  border-top:2px solid var(--ink);border-bottom:1px solid var(--ink);
+  font-size:.84rem;letter-spacing:.05em;white-space:nowrap}
+tbody td{padding:.55rem .8rem;border-bottom:1px solid var(--line);vertical-align:top;line-height:1.7}
+tbody tr:last-child td{border-bottom:2px solid var(--ink)}
+tbody tr:hover td{background:rgba(34,30,22,.03)}
+
+/* 动手试试 · 实验框 */
+.lab{margin:1.8rem 0;border:1.5px dashed var(--gold);background:rgba(168,132,44,.05);
+  padding:1.3rem 1.5rem;position:relative;border-radius:3px}
+.lab::before{content:"动手试试";position:absolute;top:-.72em;left:1.1rem;
+  background:var(--paper);padding:0 .6em;font-size:.78rem;font-weight:900;
+  letter-spacing:.25em;color:var(--gold)}
+.lab h3{border:none;padding:0;margin-top:.2rem}
+.lab pre{margin:.8rem 0}
+
+/* 下一章导航 */
+.next-ch{display:flex;justify-content:flex-end;margin-top:3.4rem}
+.next-ch a{display:inline-flex;align-items:center;gap:.7em;text-decoration:none;
+  border:1.5px solid var(--ink);padding:.75rem 1.6rem;color:var(--ink);font-weight:700;
+  font-size:.94rem;transition:all .3s;background:transparent}
+.next-ch a:hover{background:var(--ink);color:var(--paper);transform:translateX(4px)}
+.next-ch a .arrow{font-family:var(--mono)}
+
+/* 页脚 */
+footer{margin-top:5rem;padding:2.6rem 2.4rem;border-top:2px solid var(--ink);
+  text-align:center;font-size:.82rem;color:var(--ink-faint)}
+footer .f-seal{display:inline-block;margin-bottom:.8rem;padding:.3em .9em;
+  border:1.5px solid var(--cinnabar);color:var(--cinnabar);font-weight:900;letter-spacing:.3em}
+
+/* ============ 响应式 ============ */
+#toc-toggle{display:none}
+@media (max-width:960px){
+  #toc{transform:translateX(-100%);transition:transform .35s ease}
+  #toc.open{transform:none;box-shadow:20px 0 60px rgba(34,30,22,.25)}
+  #main{margin-left:0;max-width:100%}
+  #toc-toggle{display:flex;position:fixed;bottom:1.4rem;right:1.4rem;z-index:60;
+    width:52px;height:52px;border-radius:50%;border:none;cursor:pointer;
+    background:var(--ink);color:var(--paper);font-size:1.2rem;align-items:center;justify-content:center;
+    box-shadow:0 6px 20px rgba(34,30,22,.3)}
+  #cover .tracks{grid-template-columns:1fr}
+  #cover .seal{width:72px;height:72px;font-size:1rem;top:2.6rem;right:2rem}
+  #cover .vertical{display:none}
+  article{padding:0 1.3rem 4rem}
+  .ch-head .ch-num{font-size:4rem;left:-.4rem}
+}
+@media print{
+  #toc,#progress,#toc-toggle{display:none}
+  #main{margin:0;max-width:100%}
+  .reveal{opacity:1;transform:none}
+  body::before{display:none}
+}
+</style>
+</head>
+<body>
+<div id="progress"></div>
+
+<!-- ============ 侧边目录 ============ -->
+<nav id="toc">
+  <div class="toc-brand">LLM-WIKI MANUAL</div>
+  <div class="toc-title">教学手册</div>
+  <a href="#cover" data-spy="cover">卷首 · 总览</a>
+  <div class="toc-track u">使用者之旅</div>
+  <a class="u" href="#u01" data-spy="u01"><span class="n">01</span>这是什么</a>
+  <a class="u" href="#u02" data-spy="u02"><span class="n">02</span>装起来</a>
+  <a class="u" href="#u03" data-spy="u03"><span class="n">03</span>第一次使用</a>
+  <a class="u" href="#u04" data-spy="u04"><span class="n">04</span>日常循环</a>
+  <a class="u" href="#u05" data-spy="u05"><span class="n">05</span>读出来</a>
+  <a class="u" href="#u06" data-spy="u06"><span class="n">06</span>路线图</a>
+  <div class="toc-track d">开发者之旅</div>
+  <a class="d" href="#d01" data-spy="d01"><span class="n">01</span>架构总览</a>
+  <a class="d" href="#d02" data-spy="d02"><span class="n">02</span>KB 契约导读</a>
+  <a class="d" href="#d03" data-spy="d03"><span class="n">03</span>fold 机制</a>
+  <a class="d" href="#d04" data-spy="d04"><span class="n">04</span>治理与候选状态机</a>
+  <a class="d" href="#d05" data-spy="d05"><span class="n">05</span>实战故事</a>
+  <a class="d" href="#d06" data-spy="d06"><span class="n">06</span>测试与扩展</a>
+</nav>
+<button id="toc-toggle" aria-label="目录">☰</button>
+
+<div id="main">
+
+<!-- ============ 封面 ============ -->
+<header id="cover">
+  <div class="vertical">知识治理 · 维基之道</div>
+  <div class="seal">教学<br>手册</div>
+  <div class="kicker">LLM-WIKI · 教学目录</div>
+  <h1>把散落的知识<br>治理成一座维基<span class="en">LLM-WIKI TEACHING MANUAL</span></h1>
+  <p class="lede">一份写给「完全不熟悉这个 skill 的人」的完整导览：它是什么、为什么这样设计、怎么装、怎么用、怎么改。两条旅程，各六章，可按需选读。</p>
+  <div class="tracks">
+    <a class="track-card u" href="#u01">
+      <div class="t-label">TRACK A · 使用者之旅</div>
+      <div class="t-name">我想用它管知识</div>
+      <div class="t-desc">安装 → 蒸馏 → 治理 → 裁决 → 检索。主线约 15 分钟读完，每章末尾有「动手试试」。</div>
+    </a>
+    <a class="track-card d" href="#d01">
+      <div class="t-label">TRACK B · 开发者之旅</div>
+      <div class="t-name">我想改它、扩展它</div>
+      <div class="t-desc">架构地图 → 契约导读 → fold 机制 → 治理状态机 → 实战故事 → 测试与扩展。</div>
+    </a>
+  </div>
+  <div class="meta">对应 skill v1.1 / KB contract_version 1 · 2026-08 · 契约权威:spec / SKILL.md</div>
+</header>
+
+<article>
+
+<!-- ============ 总览(README) ============ -->
+<section class="chapter" id="overview">
+  <div class="ch-head reveal">
+    <div class="ch-track" style="color:var(--gold)">卷首</div>
+    <h2>30 秒看懂这是什么</h2>
+  </div>
+  <div class="reveal">
+  <p class="lead"><strong>llm-wiki 是一个 Claude Code / Copilot skill，把散落在各处的知识——对话、Jira、Confluence、仓库 wiki——治理成一个可检索、可裁决、可演化的个人 wiki 知识库（KB)。</strong></p>
+  <p>它解决的核心问题：LLM 会话是健忘的。今天讨论清楚的设计决策，下周的新会话就忘了；Jira 和 Confluence 里的口径互相矛盾，没人记得以哪个为准。llm-wiki 的做法：</p>
+  <ol>
+    <li><strong>拉进来</strong>——对话蒸馏、连接器拉取，统一成带完整来源元数据的 raw 文档；</li>
+    <li><strong>治理成页面</strong>——自动消化成四类 wiki 页面，有风险的改动不静默落盘，而是变成「候选」等你裁决；</li>
+    <li><strong>读出来</strong>——纯 agent 迭代检索（无搜索引擎），每个结论带引用，每个引用机器校验。</li>
+  </ol>
+  <p>整个系统的信任哲学一句话：<strong>自动化优先，但拿不准的一定停下来问你（fail-closed)</strong>。</p>
+
+  <h3>项目内各文档的分工</h3>
+  <div class="tbl-wrap"><table>
+    <thead><tr><th>文档</th><th>读者</th><th>作用</th></tr></thead>
+    <tbody>
+      <tr><td><code>docs/</code>(本手册)</td><td>人</td><td>教学：为什么、怎么上手、怎么读代码</td></tr>
+      <tr><td><code>llm-wiki/SKILL.md</code></td><td>LLM(agent)</td><td>运行时规范：skill 被触发后 agent 照做的唯一权威路径</td></tr>
+      <tr><td><code>spec/spec.zh-CN.md</code> / <code>spec.en.md</code></td><td>实现者</td><td>设计契约：字段表、规则编号，详细到实现者无需追问</td></tr>
+      <tr><td><code>llm-wiki/CHANGELOG.md</code></td><td>所有人</td><td>版本历史与破坏性变更迁移说明</td></tr>
+      <tr><td><code>CONTEXT.md</code></td><td>Claude 会话</td><td>项目术语表（ubiquitous language)</td></tr>
+    </tbody>
+  </table></div>
+  <p>本手册<strong>不复述契约细节</strong>——凡涉及字段定义、规则编号处，一律指向 spec 对应小节，spec 是唯一权威来源。</p>
+  </div>
+</section>
+
+<!-- ============================================================
+     使用者之旅
+============================================================ -->
+<div class="track-divider u reveal" id="track-u">
+  <div class="td-en">TRACK A · USER JOURNEY</div>
+  <h2>使用者之旅</h2>
+  <p class="td-note">六章，线性阅读。主线纯可读；每章末尾的「动手试试」环节基于仓库自带的教具 KB(<code>llm-wiki/fixtures/kb</code>)，零准备成本。</p>
+</div>
+
+<!-- ---- U01 ---- -->
+<section class="chapter" id="u01">
+  <div class="ch-head u reveal">
+    <div class="ch-num">01</div>
+    <div class="ch-track">使用者之旅 · 第一章</div>
+    <h2>这是什么</h2>
+    <div class="ch-sub">纯阅读 · 约 3 分钟</div>
+  </div>
+  <div class="reveal">
+  <h3>你大概遇到过这些场景</h3>
+  <ul>
+    <li>上周和 Claude 讨论清楚了一个技术方案，今天开新会话，它一无所知，你只好把背景重新讲一遍。</li>
+    <li>Jira 任务里写「重试 8 次」,Confluence 设计文档里写「重试 5 次」——到底哪个对？谁改的？什么时候改的？</li>
+    <li>团队仓库里自动生成的 wiki 页越积越多，但没有一个统一入口能跨仓库、跨来源地问一句「支付回调到底怎么处理的？」</li>
+  </ul>
+  <p>llm-wiki 的答案是：<strong>给 LLM 配一个独立于任何代码仓库的、会自我治理的知识库（KB)，让所有知识先进 KB，再从 KB 里被检索和引用。</strong></p>
+
+  <h3>一张图看全流程</h3>
+<pre class="diagram">        ┌─────────────────── 外部世界 ───────────────────┐
+        │  对话    Jira    Confluence    仓库 openwiki    │
+        └───┬────────┬──────────┬────────────┬──────────┘
+            │ 蒸馏    │ 拉取      │ 拉取        │ 拉取
+            ▼        ▼          ▼            ▼
+   ┌─────────────────────────────────────────────────┐
+   │ KB(一个独立目录,是 git 仓库)                      │
+   │                                                 │
+   │   raw/        证据层:1:1 对应源文档,保留原文语言 │
+   │     │                                           │
+   │     │  治理(govern run,你说「治理」时触发)       │
+   │     ▼                                           │
+   │   wiki/       策展层:四类页面                    │
+   │     ├─ sources/    单源摘要页(与 raw 1:1)       │
+   │     ├─ syntheses/  跨源主题叙事(每条结论带来源) │
+   │     ├─ concepts/   共享概念的权威定义            │
+   │     └─ entities/   命名实体 + 关系               │
+   │                                                 │
+   │   有风险的改动 → *.candidate.md 候选 → 你裁决    │
+   └───────┬───────────────────────────┬─────────────┘
+           │ 检索/深研                  │ 生成站点
+           ▼                           ▼
+   会话内回答(逐条引用)          本地静态 HTML(双击即开)</pre>
+
+  <h3>四个最重要的设计直觉</h3>
+  <ol>
+    <li><strong>两层分离：raw 是证据，wiki 是结论。</strong>raw 文档忠实保存来源原文（含原始语言）,wiki 页面是消化后的策展结论。检索只看 wiki 层，但每个结论都能沿 <code>sources</code> 链回溯到 raw 证据。</li>
+    <li><strong>候选制度：agent 不静默改写你的知识。</strong>新增内容、纯追加且语义检查无冲突的改动可以自动落盘；凡是改写、删除、合并、有矛盾的改动，一律变成 <code>*.candidate.md</code> 候选文件，生成一份可视化裁决报告，等你回复 approve / reject。<strong>宁可误伤，不可放过。</strong></li>
+    <li><strong>fail-closed：检查跑不了 = 检查不通过。</strong>比如没有 Node 环境时，校验脚本跑不了，系统就自动降级为「所有改动都进候选」，而不是跳过校验直接落盘。</li>
+    <li><strong>记忆在 KB 里，不在会话里。</strong>你的每一次裁决（为什么批准、为什么驳回）都记在 KB 的 <code>.kb/govern/decisions.jsonl</code> 里，成为后续治理判断的先例——这弥补了大模型跨会话无记忆的缺陷。</li>
+  </ol>
+
+  <h3>它不适合什么</h3>
+  <ul>
+    <li><strong>通用网页搜索工具</strong>——它只检索你自己的 KB，不替代 Google/官方文档；</li>
+    <li><strong>一次性问答</strong>——问完即走的场景不需要 KB;</li>
+    <li><strong>多人实时协作 wiki</strong>——v1 是单人单 KB 设计，团队场景通过 git 克隆共享，但没有并发合并语义。</li>
+  </ul>
+  </div>
+  <div class="next-ch reveal"><a href="#u02">下一章 · 装起来 <span class="arrow">→</span></a></div>
+</section>
+
+<!-- ---- U02 ---- -->
+<section class="chapter" id="u02">
+  <div class="ch-head u reveal">
+    <div class="ch-num">02</div>
+    <div class="ch-track">使用者之旅 · 第二章</div>
+    <h2>装起来</h2>
+    <div class="ch-sub">目标：装好的 skill + 初始化好的 KB + 配好的环境变量 · 约 10 分钟</div>
+  </div>
+  <div class="reveal">
+  <h3>前置条件</h3>
+  <div class="tbl-wrap"><table>
+    <thead><tr><th>条件</th><th>检查方法</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td>Claude Code(或 Copilot)</td><td>—</td><td>skill 运行的宿主环境</td></tr>
+      <tr><td>Node.js ≥ 20</td><td><code>node --version</code></td><td>四个增强脚本需要。<strong>没有也能用</strong>(SKILL.md 每章都有手动降级路径），但自动校验、自动批准会关闭，体验打折</td></tr>
+      <tr><td>git</td><td><code>git --version</code></td><td>KB 必须是 git 仓库（历史追溯、手工改动检测都依赖它）</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>第一步：安装 skill</h3>
+  <p>skill 的真实位置是 <code>~/.claude/skills/llm-wiki/</code>(Claude Code 原生读取）。如果你还要给 Copilot 或中性宿主用，运行安装器把它投影过去：</p>
+<pre><code>node &lt;skill目录&gt;/scripts/install.mjs            # 首次安装
+node &lt;skill目录&gt;/scripts/install.mjs update     # 升级后同步</code></pre>
+  <p>Windows 优先建 junction,POSIX 优先建 symlink；失败则退化为整目录拷贝（带版本戳）。输出里 <code>mode: junction | symlink | copy</code> 告诉你用了哪种方式。装完后新开一个会话，说一句「<strong>初始化 KB</strong>」，看 skill 是否被触发——能触发即安装成功。</p>
+
+  <h3>第二步：初始化 KB</h3>
+  <p>在会话里说一句「<strong>初始化 KB</strong>」,agent 会引导你走完五步（每步都会先问你再动手）。这里把你会被问到的事先说清楚：</p>
+  <ol>
+    <li><strong>KB 放哪？</strong>默认建议 <code>~/kb</code>。这是个独立全局目录，<strong>故意不放进任何代码仓库</strong>——换项目工作时知识不丢。</li>
+    <li><strong>创建目录树</strong>:<code>raw/</code>（证据层）、<code>wiki/</code>（策展层）、<code>.kb/</code>（机器衍生品，gitignore)、<code>kb.json</code>、<code>GOVERNANCE.md</code>、<code>log.md</code>。</li>
+    <li><strong>git init</strong>——必须是 git 仓库。</li>
+    <li><strong>设置环境变量</strong>(Windows 示例，新终端生效）:<br><code>setx LLM_WIKI_KB "C:\Users\&lt;你&gt;\kb"</code><br>之后每个会话自动发现 KB，零废话。多 KB 是 v1 的明确边界——<code>--kb</code> 参数是内置的逃生口。</li>
+    <li><strong>写 kb.json</strong>。最小可用配置（不用 Jira/Confluence 时）:</li>
+  </ol>
+<pre><code>{
+  "contract_version": 1,
+  "language": "zh",
+  "connectors": {},
+  "governance": { "max_clusters_per_run": 10, "max_sources_per_cluster": 1, "max_chars_per_source": 2500 }
+}</code></pre>
+  <p><code>language: zh</code> 表示 wiki 页面用中文写；raw 层永远保留来源原文语言。三个 governance 值是默认值可省略；注意 <code>max_sources_per_cluster</code> 是<strong>每折折入几篇源</strong>（默认 1，推荐保持），不是覆盖上限。</p>
+  <blockquote><p>如果你拿到了别人 git clone 给你的 KB：跳过建目录，只需确认 <code>kb.json</code> 存在、设置 <code>LLM_WIKI_KB</code> 即可。</p></blockquote>
+
+  <h3>第三步：验证</h3>
+  <p>说一句「<strong>蒸馏</strong>」，然后随便聊几句，再说「把刚才的存进 KB」。如果 <code>raw/chat/</code> 下出现了一篇 <code>conv-xxxxxxxxxxxx.md</code>，链路就通了——这是唯一不需要任何外部账号的验证路径。</p>
+  </div>
+
+  <div class="lab reveal">
+    <p>不想动真 KB？仓库里带了一个教具 KB，先跑个体检：</p>
+<pre><code>cd D:\claude\kb-skill
+node llm-wiki/scripts/govern.mjs --kb llm-wiki/fixtures/kb plan</code></pre>
+    <p>这个 fixtures KB 是一个虚构的「支付」领域示例：4 篇 raw（支付库表设计、回调重试讨论……)、已批准的 wiki 页面、一篇待裁决的候选 <code>wiki/concepts/retry-policy.candidate.md</code>。<code>plan</code> 输出的六个列表（待消化/异常/错误/待裁决队列/健康清单/被抑制）就是第 4 章要讲的治理入口视图。</p>
+  </div>
+  <div class="next-ch reveal"><a href="#u03">下一章 · 第一次使用 <span class="arrow">→</span></a></div>
+</section>
+
+<!-- ---- U03 ---- -->
+<section class="chapter" id="u03">
+  <div class="ch-head u reveal">
+    <div class="ch-num">03</div>
+    <div class="ch-track">使用者之旅 · 第三章</div>
+    <h2>第一次使用：从对话到 wiki 页面</h2>
+    <div class="ch-sub">整条旅程的核心闭环：对话 → 蒸馏 → raw 文档 → 治理 → wiki 页面</div>
+  </div>
+  <div class="reveal">
+  <h3>场景设定</h3>
+  <p>假设你刚和 Claude 讨论完「订单状态机该怎么设计」，结论包括：五个状态、两条异常路径、为什么不用数据库枚举。这些内容现在只活在这个会话里——会话结束就蒸发。把它变成知识：</p>
+
+  <h3>第 1 步：蒸馏</h3>
+  <p>说一句「<strong>蒸馏</strong>」（或「<strong>存进 KB</strong>」)。agent 会把当前对话（连同它引用过的资料）整理成一篇<strong>蒸馏文档</strong>，落进 <code>raw/chat/conv-&lt;hash12&gt;.md</code>。它长这样（结构示意）:</p>
+<pre><code>---
+source: chat
+source_id: conv-a1b2c3d4e5f6
+source_url: llmwiki://chat/conv-a1b2c3d4e5f6
+evidence_class: transcript
+---
+# 订单状态机设计讨论
+
+- 订单分五态:created → paid → shipped → done,外加 cancelled [T-3]
+- 不用数据库枚举,用状态机表,原因:…… [T-7]
+
+# Appendix A(transcript)
+### T-3 (user, 2026-08-17T10:02:11Z)
+…原文转录…</code></pre>
+  <ul>
+    <li><strong>每个要点带引用标记</strong>:<code>[T-n]</code> 指向附录 A 的对话转录，<code>[R-n]</code> 指向附录 B 的外部引用资料（含出处 URL 和原文节录）。校验是 fail-closed 的——任何一个标记对不上附录，<strong>整篇不写入</strong>，报错重来。</li>
+    <li><strong>诚实声明</strong>：附录是 agent 转录的，不是代码机械生成的；保真度靠 validate 的内部一致性校验 + agent 自律。这点 spec 里明说，文档里也带着这行声明。</li>
+    <li><strong>对话超过 3 万字符会被拒</strong>：不静默截断，提示你按主题分次蒸馏。</li>
+    <li>落 <code>raw/</code> 即完成——此时还<strong>检索不到</strong>，要等治理。</li>
+  </ul>
+
+  <h3>第 2 步：治理</h3>
+  <p>说一句「<strong>治理</strong>」，触发一次 govern run。对你这篇新蒸馏文档，run 里发生的事：</p>
+  <ol>
+    <li><strong>plan</strong> 把它列入 <code>pending</code>（待消化）清单；</li>
+    <li><strong>分类</strong>：每篇 raw 至少得到一篇 1:1 的 source 页；内容里提到的「订单状态机」这种跨文档共享概念，会被标记为 concept 种子；</li>
+    <li><strong>起草原稿</strong>:<code>wiki/sources/order-state-machine-discussion.md</code>（示意 slug)，单行 <code>summary</code> 喂给索引，<code>source_ref</code> 精确指回 raw 身份；</li>
+    <li><strong>校验 + 语义检查</strong>双闸门：通过后，<strong>新页面属于低风险 → 自动批准落盘</strong>;</li>
+    <li>若提炼出 concept 页（如 <code>wiki/concepts/order-state-machine.md</code>)，先查 slug 注册表防重复，再按同样的纪律处理；</li>
+    <li><strong>rebuild-index</strong>:<code>wiki/index.md</code> 重建，你的新页面出现在索引里；</li>
+    <li>结尾 agent 会汇报：自动批准了几篇、有几篇等你裁决、健康清单有什么。</li>
+  </ol>
+
+  <h3>第 3 步：问一句试试</h3>
+  <p>直接问（不用任何口令）:「订单状态机为什么不用数据库枚举？」agent 会执行检索协议：先读 <code>wiki/index.md</code> → 全文搜索关键词变体 → 沿链接和来源链扩展 → 回答，<strong>每个结论带 <code>[[wikilink]]</code> 引用</strong>，关键结论带 ≤25 词的原文引用（机器校验过是引用页的原文子串）。末尾附一行检索说明：查了哪些渠道、读了哪几页。如果 KB 里真没有，它会直说「<strong>KB 中没有此内容</strong>」，而不是编一个。</p>
+
+  <h3>信任分层：蒸馏文档的特殊地位</h3>
+  <p>注意蒸馏文档的 frontmatter 有 <code>evidence_class: transcript</code>（转录级证据）。规则：<strong>转录级来源永远不能单独支撑 synthesis 里的一条结论</strong>——必须有拉取级来源（Jira/Confluence/openwiki）佐证，否则整篇 synthesis 强制进候选由你裁决。这是对「对话里说的话可能是错的」这一事实的结构化不信任。</p>
+  </div>
+
+  <div class="lab reveal">
+    <p>用教具 KB 看一篇真实的蒸馏文档和它的引用标记结构：</p>
+<pre><code>cat llm-wiki/fixtures/kb/raw/chat/conv-a1b2c3d4e5f6.md</code></pre>
+    <p>再对照看它被治理后生成的 source 页 <code>llm-wiki/fixtures/kb/wiki/sources/chat-payment-discussion.md</code>——注意 frontmatter 里 <code>source_ref</code> 如何精确指回 raw 身份，正文如何比 raw 更策展化。</p>
+  </div>
+
+  <div class="reveal">
+  <h3>常见疑问</h3>
+  <p><strong>Q：蒸馏完忘了治理，内容会丢吗？</strong><br>不会。raw 文档已在 git 仓库里，下次说「治理」时一并消化。</p>
+  <p><strong>Q：同一段对话蒸馏两次会怎样？</strong><br><code>source_id</code> 是附录内容的哈希前 12 位，同一对话覆盖同一文件，不产生重复。不同对话撞了 id 会报错并加后缀——绝不静默覆盖。</p>
+  <p><strong>Q：治理时 KB 里有未提交的 git 改动？</strong><br>run 会<strong>暂停</strong>，请你先 commit 或 stash。它绝不替你做破坏性 git 操作。</p>
+  </div>
+  <div class="next-ch reveal"><a href="#u04">下一章 · 日常循环 <span class="arrow">→</span></a></div>
+</section>
+
+<!-- ---- U04 ---- -->
+<section class="chapter" id="u04">
+  <div class="ch-head u reveal">
+    <div class="ch-num">04</div>
+    <div class="ch-track">使用者之旅 · 第四章</div>
+    <h2>日常循环：拉取、治理、裁决</h2>
+    <div class="ch-sub">知识持续生长时的日常节奏</div>
+  </div>
+  <div class="reveal">
+  <h3>日常节奏一览</h3>
+<pre class="diagram">(不定期) 拉取/蒸馏  →  (攒一批后) 治理  →  (有候选时) 裁决  →  (想看时) 生成站点
+   「拉取 …」             「治理」          看 HTML 回 decision      「生成站点」</pre>
+  <p>没有定时器、没有后台钩子——所有动作都是你说话触发的。KB 像一个花园：原料随时丢进去，治理是你来修剪的时刻。</p>
+
+  <h3>拉取：多来源汇入</h3>
+  <p>目前实战验证过的连接器是 <strong>OpenWiki 本地连接器</strong>——把代码仓库里自动生成的 wiki 页（<code>&lt;repo&gt;/openwiki/</code>）吸进 raw 层：</p>
+  <p>口令:「拉取 <code>D:\src\payment-service</code> 的 openwiki」; 脚本路径：</p>
+<pre><code>node scripts/acquire.mjs openwiki --repo D:\src\payment-service [--subdir architecture]</code></pre>
+  <p>你会看到 <code>{created, updated, unchanged, removed_upstream, errors}</code> 的摘要。连接器保证：</p>
+  <ul>
+    <li><strong>增量</strong>：只全量拉新增和有变化的；内容 hash 相同的跳过；</li>
+    <li><strong>上游删除有语义</strong>:OpenWiki 里消失的文件直接删 raw（本地文件系统删除是明确的）;Jira/Confluence 则是「两击规则」——连续两次 detect 都找不到才删，防止「没权限」和「被删除」分不清造成误删；</li>
+    <li><strong>每批一个 commit</strong>:<code>acquire: openwiki (+N ~M -K)</code>。</li>
+  </ul>
+  <p>(Jira/Confluence 连接器见 <a class="inl" href="#u06">第 6 章 · 路线图</a>:spec 已完整定义，尚未实战验证。)</p>
+
+  <h3>治理深化：多源折叠出 synthesis</h3>
+  <p>当多篇 source 页共享同一个 topic(frontmatter 里的 <code>related_topics</code>)，治理 run 会把它们聚成<strong>簇</strong>，产出或更新一篇 <strong>synthesis 页</strong>——跨源主题叙事，每条结论带 <code>(raw:来源)</code> 背书标签。v1.1 起，synthesis 用<strong>增量折叠</strong>构建，严格串行：</p>
+<pre class="diagram">折叠第 1 源 → 双闸门校验 → 落盘 → 折叠第 2 源 → 双闸门校验 → 落盘 → …</pre>
+  <ul>
+    <li>每折先读当前页（它是之前所有折叠的累积结果），按 <code>source_version</code> 升序折入下一源——<strong>新说法后落，冲突恰好暴露在相撞的那一折</strong>;</li>
+    <li>双闸门：脚本校验（含「重融护栏」——防止重新融合时丢掉原有链接和关键事实）+ 语义检查（必须输出结构化证据 <code>{conflicts:[…]}</code> 或 <code>{no_conflict:true}</code>，没输出视为没检查）;</li>
+    <li>顺利通过的一折 = 纯追加 → <strong>自动批准</strong>;</li>
+    <li>撞了矛盾 → <strong>断链</strong>：最后一个好的折叠保持不动，相撞的那一折变成候选（review_note 点名相撞的源对），剩余源下轮再折。页的 <code>sources:</code> 清单本身就是进度游标，没有额外的状态文件。</li>
+  </ul>
+  <p><strong>簇没有大小上限</strong>——不会再说「这一簇只覆盖了 6/9 篇」（那条截断规则已在 v1.1 退役，详见 <a class="inl" href="#d03">dev-journey 03 · fold 机制</a>)。</p>
+
+  <h3>裁决：候选回环</h3>
+  <p>治理 run 产生了候选（<code>*.candidate.md</code>）时，会生成一份<strong>裁决报告 HTML</strong>（双击打开，单文件、离线可看）。每个案例依次给你看：</p>
+  <ol>
+    <li><strong>review_note</strong>——为什么是候选（高亮在最前）;</li>
+    <li><strong>diff</strong>——候选 vs 现有页面（红删绿增）;</li>
+    <li><strong>冲突组</strong>——如果是两源矛盾，双方并排展示；</li>
+    <li><strong>溯源证据</strong>——可折叠的 raw 原文节录；</li>
+    <li><strong>该页的裁决历史</strong>——以前怎么判的、理由是什么。</li>
+  </ol>
+  <p>报告<strong>只读，不回写</strong>。你点按钮生成回复文本，粘回会话：</p>
+<pre><code>decision: approve | page: wiki/concepts/retry-policy.candidate.md | reason: 采纳实现方口径</code></pre>
+  <p>五种动作：<code>approve</code>（批准）、<code>reject</code>（驳回，候选进 archive)、<code>edit-then-approve</code>（改后批准）、<code>archive-loser</code>（采纳一方并归档败方，<strong>败方必须显式指定</strong>)、<code>keep-both</code>（两方并存，登记为已知平行文档对，以后不再报警）。</p>
+  <p>你的每个理由都会记入 <code>.kb/govern/decisions.jsonl</code>——<strong>理由必填</strong>。这些先例以后会被 agent 引用，让重复出现的同类情况不再打扰你（自动化优先，裁决只在必要时）。</p>
+
+  <h3>健康清单：只报告，不动手</h3>
+  <p>plan 还会产出 <code>human_lists</code>：孤儿页、悬空链接、疑似冲突对、<strong>检测到你手工改了 wiki/ 的文件</strong>等。这些<strong>永远不会被自动处置</strong>，只是摆给你看。顺带：<code>wiki/</code> 目录是治理所有的，手改不保证存活；想改东西请走「edit-then-approve」裁决通道。</p>
+  </div>
+
+  <div class="lab reveal">
+    <p>教具 KB 里有一篇现成的待裁决候选：</p>
+<pre><code>cat llm-wiki/fixtures/kb/wiki/concepts/retry-policy.candidate.md</code></pre>
+    <p>注意它的 frontmatter:<code>status: candidate</code>、<code>base:</code>（指向目标页）、<code>review_note:</code>（为什么进候选）。再生成裁决报告看看真实界面：</p>
+<pre><code>node llm-wiki/scripts/render.mjs --kb llm-wiki/fixtures/kb report</code></pre>
+    <p>打开生成的 <code>.kb/govern/reports/latest.html</code>，就是你在真实裁决时会看到的样子。</p>
+  </div>
+  <div class="next-ch reveal"><a href="#u05">下一章 · 读出来 <span class="arrow">→</span></a></div>
+</section>
+
+<!-- ---- U05 ---- -->
+<section class="chapter" id="u05">
+  <div class="ch-head u reveal">
+    <div class="ch-num">05</div>
+    <div class="ch-track">使用者之旅 · 第五章</div>
+    <h2>读出来：站点与检索</h2>
+    <div class="ch-sub">知识进了 KB,怎么舒服地拿出来用</div>
+  </div>
+  <div class="reveal">
+  <h3>生成站点：双击即开的本地 wiki</h3>
+  <p>口令「<strong>生成站点</strong>」，脚本 <code>node scripts/render.mjs --kb &lt;path&gt; site</code> → 产出 <code>.kb/site/index.html</code>。<strong>单文件、零依赖、零守护进程</strong>——数据 JSON 直接嵌在 HTML 里，双击就能看，发给别人也能看。四个视图：</p>
+  <div class="tbl-wrap"><table>
+    <thead><tr><th>视图</th><th>看什么</th></tr></thead>
+    <tbody>
+      <tr><td><strong>browse</strong></td><td>按页型浏览（可折叠分组），按 issue_type/tag/来源过滤；每页正文 + frontmatter + 溯源链</td></tr>
+      <tr><td><strong>graph</strong></td><td>wikilink 关系图：canvas 实时力导向模拟，滚轮缩放/拖拽/悬停提示；500 节点内流畅。枢纽页显示标签，source 页悬停显示——不会糊成一片字</td></tr>
+      <tr><td><strong>history</strong></td><td>裁决时间线：谁、何时、对哪页、做了什么、理由是什么（来自 decisions.jsonl + log.md)</td></tr>
+      <tr><td><strong>overview</strong></td><td>页型统计、run 历史、孤儿页/悬空链接健康度</td></tr>
+    </tbody>
+  </table></div>
+  <p>安全设计：raw 正文、review_note、你的裁决理由都是不可信输入，渲染前全部实体转义；链接 href 白名单；不跑行内 HTML——所以这份单文件 HTML 可以安心双击。</p>
+
+  <h3>检索：问就完了</h3>
+  <p>普通问题直接问，不用口令。检索协议的六个要点（对使用者而言你只需感知到这些行为）:</p>
+  <ol>
+    <li><strong>索引先行</strong>——先读 <code>wiki/index.md</code> 建全局地图；</li>
+    <li><strong>多路召回</strong>——全文搜索 + 文件名匹配，查询词自动做同义词和中英交叉扩展；<strong>禁止</strong>编造「假想文档」当查询（禁 HyDE)，只允许从已命中页提取新关键词再查（CSQE);</li>
+    <li><strong>图扩展</strong>——命中页沿 wikilink 和来源链各扩一跳（synthesis 命中会拉进它的 sources 交叉验证）;</li>
+    <li><strong>迭代加深</strong>——按标题分节读，最多 3 轮，不整篇吞；</li>
+    <li><strong>引用纪律</strong>——只从读过的页作答，每条结论带 <code>[[wikilink]]</code>；关键结论带 ≤25 词原文引用，<strong>机器校验是原文子串</strong>才输出；零命中直说「KB 中没有此内容」;</li>
+    <li><strong>检索说明</strong>——答案末尾一行账目：查了哪些渠道、读了哪几页。</li>
+  </ol>
+  <blockquote>
+    <p>例:「支付回调重试几次？」</p>
+    <p>Jira 任务说 8 次（[[pay-callback-retry]]);Confluence 设计文档说 5 次（[[pay-table-design-v3]]);synthesis [[payment]] 记录了裁决后的结论……</p>
+    <p><em>检索说明： queried [full-text: "重试","retry"; index]; read [[payment]] (+2 via:provenance)</em></p>
+  </blockquote>
+  <p>注意这个例子里系统<strong>没有掩盖矛盾</strong>——两个来源不一致时，把两边都摆出来并指向裁决记录，正是 KB 的价值。</p>
+
+  <h3>深研：强制拉满迭代</h3>
+  <p>口令「<strong>深研 &lt;问题&gt;</strong>」。普通提问是「单档自适应」(agent 按问题复杂度自己选轮数）；加上「深研」二字 = 强制最大多轮迭代，适合「把 KB 里关于 X 的一切都挖出来」这类问题。</p>
+
+  <h3>看不见的东西同样重要</h3>
+  <p>检索<strong>只看 approved 页面</strong>，而且是结构性保证：候选文件（<code>*.candidate.md</code>）和 <code>archive/</code> 在枚举时就被 glob 机械排除，不靠 agent 自觉。含义：</p>
+  <ul>
+    <li>候选里的内容（可能正确但未经你确认）<strong>不会</strong>混进答案；</li>
+    <li>被驳回/归档的旧说法<strong>不会</strong>复活；</li>
+    <li>如果你发现答案漏了什么，先想想：那篇内容是不是还躺在候选队列里等你 approve?</li>
+  </ul>
+  <p>规模上限：协议按 ≤500 页设计。超出后有分节读索引、二级 topic 索引等降级策略（CHANGELOG 的 known boundaries 有说明）。</p>
+  </div>
+
+  <div class="lab reveal">
+<pre><code>node llm-wiki/scripts/render.mjs --kb llm-wiki/fixtures/kb site</code></pre>
+    <p>双击 <code>llm-wiki/fixtures/kb/.kb/site/index.html</code>:</p>
+    <ul>
+      <li>在 graph 视图找到 synthesis 页 <code>payment</code>，看它和四篇 source 页之间的连线（这些语义边来自 frontmatter 的 <code>sources:</code>，不是正文链接）;</li>
+      <li>在 history 视图看裁决时间线——fixtures 里的 decisions.jsonl 记录了一次真实的 approve/reject 序列。</li>
+    </ul>
+  </div>
+  <div class="next-ch reveal"><a href="#u06">下一章 · 路线图 <span class="arrow">→</span></a></div>
+</section>
+
+<!-- ---- U06 ---- -->
+<section class="chapter" id="u06">
+  <div class="ch-head u reveal">
+    <div class="ch-num">06</div>
+    <div class="ch-track">使用者之旅 · 第六章(末章)</div>
+    <h2>路线图：已定义未实战的能力与边界</h2>
+    <div class="ch-sub">诚实清单：什么今天能用,什么写在 spec 里但还没人真的跑过</div>
+  </div>
+  <div class="reveal">
+  <h3>Jira / Confluence 连接器：spec 完整，尚未实战</h3>
+  <p>spec 和 SKILL.md 对 Jira/Confluence 连接器有<strong>完整定义</strong>(§3):</p>
+  <ul>
+    <li>Server/DC 实例，PAT 认证（PAT 存环境变量，kb.json 只存变量名——密钥永不上盘）;</li>
+    <li>四种选择器：页面 URL / Jira issue key / JQL / CQL，可自动嗅探；</li>
+    <li>增量拉取、两击删除规则、附件 hash 去重、XHTML→Markdown 转换（未知宏降级为 <code>[macro: name]</code> 占位，绝不静默丢弃）;</li>
+    <li>Cloud 实例<strong>不支持</strong>(v1 只有 Server/DC)。</li>
+  </ul>
+  <p><strong>但是</strong>：截至 v1.1，还没有任何真实 KB 用它们拉过一篇文档（fixtures 里的 <code>raw/jira/</code>、<code>raw/confluence/</code> 是手工构造的教具）。如果你要成为第一个实战用户：</p>
+  <ol>
+    <li>预期会遇到粗糙边缘——遇到了请记录，这正是教程和 spec 需要的反馈；</li>
+    <li>排错速查（init 引导同款）:401 = PAT 过期重发；403 = PAT 权限不够；全部 404 = base_url 指错（要指 Server/DC 根，不是 Cloud)；超时 = 网络/VPN 问题，不是凭证问题；</li>
+    <li>Zephyr Scale 测试步骤拉取明确推迟到连接器二期。</li>
+  </ol>
+
+  <h3>明确的边界（v1 不做什么)</h3>
+  <div class="tbl-wrap"><table>
+    <thead><tr><th>边界</th><th>说明</th></tr></thead>
+    <tbody>
+      <tr><td>单 KB</td><td>多 KB 只有 <code>--kb</code> 参数这个逃生口，没有跨 KB 检索</td></tr>
+      <tr><td>≤500 页</td><td>检索协议的设计容量；更大规模用分节索引等降级策略</td></tr>
+      <tr><td>无搜索引擎</td><td>检索纯靠 agent 迭代（Grep/Glob/Read);KB 大到一定规模后召回率受宿主能力影响</td></tr>
+      <tr><td>蒸馏转录靠 agent</td><td>附录保真 = validate 一致性校验 + agent 自律，不是代码机械保证</td></tr>
+      <tr><td>降级模式体验打折</td><td>无 Node 时全流程可手动跑，但自动批准关闭（全部进候选）、graph 视图跳过</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>演进方式</h3>
+  <ul>
+    <li>skill 语义化版本 + <code>CHANGELOG.md</code>;KB 契约只增量兼容演进，破坏性变更必带迁移说明；</li>
+    <li><code>kb.json</code> 的 <code>contract_version</code> 是运行检查点：skill 比 KB 新时，脚本退出码 65 并给迁移指引；</li>
+    <li>升级 = 覆盖整个 skill 目录（所有个人化数据都在 KB 侧，覆盖安全）+ <code>install.mjs update</code> 重投影。</li>
+  </ul>
+  <p>v1.0 → v1.1 的演进故事（截断 → 折叠）本身就是「设计如何被真实使用证据驱动」的好案例，见 <a class="inl" href="#d03">dev-journey 03 · fold 机制</a>。</p>
+  <blockquote><p><strong>使用者之旅完。</strong>至此你已掌握：安装与初始化 → 蒸馏/拉取进 raw → 治理出四类页面 → 裁决候选 → 站点与检索。想理解这套系统<strong>为什么</strong>这样设计、想改它，请继续开发者之旅。</p></blockquote>
+  </div>
+  <div class="next-ch reveal"><a href="#d01">进入开发者之旅 <span class="arrow">→</span></a></div>
+</section>
+
+<!-- ============================================================
+     开发者之旅
+============================================================ -->
+<div class="track-divider d reveal" id="track-d">
+  <div class="td-en">TRACK B · DEVELOPER JOURNEY</div>
+  <h2>开发者之旅</h2>
+  <p class="td-note">六章，叙事导读：讲 spec 不写的「为什么」和「怎么读代码」。契约细节一律指向 <code>spec/spec.zh-CN.md</code> 对应小节——spec 是唯一权威。</p>
+</div>
+
+<!-- ---- D01 ---- -->
+<section class="chapter" id="d01">
+  <div class="ch-head d reveal">
+    <div class="ch-num">01</div>
+    <div class="ch-track">开发者之旅 · 第一章</div>
+    <h2>架构总览</h2>
+    <div class="ch-sub">给要改这个 skill 的人:先建立地图,再谈细节</div>
+  </div>
+  <div class="reveal">
+  <h3>最重要的架构事实：这不是一个程序，是一份给 agent 的 runbook</h3>
+<pre class="diagram">llm-wiki/
+├── SKILL.md        ← 唯一规范路径:skill 被触发后,agent 照它执行一切(507 行)
+├── prompts/        ← 9 个 prompt 模板,在 SKILL.md 各步骤按文件名引用
+├── scripts/        ← 5 个 Node 零依赖单文件脚本,渐进增强,不是必需品
+├── templates/      ← 页面骨架(4 类 wiki 页 + raw)+ 2 个 HTML 模板
+└── fixtures/       ← 教具 KB + 上游仓库样本,测试和本手册共用</pre>
+  <p>设计原则（SKILL.md §1，贯穿一切）:</p>
+  <ol>
+    <li><strong>prompts first</strong>——判断性工作全部由宿主 agent(LLM）执行；脚本是省力的机械部分；</li>
+    <li><strong>scripts as progressive enhancement</strong>——没有 Node 环境，SKILL.md 每章有写到「agent 可照做粒度」的手动降级路径；</li>
+    <li><strong>fail-closed</strong>——检查跑不了 = 检查不通过 → 进候选交人审；</li>
+    <li><strong>correctness by structure, not by discipline</strong>——正确性靠目录结构/glob 排除/frontmatter 白名单机械保证，不靠「agent 记得不要做某事」。</li>
+  </ol>
+  <p>第 4 条是这个项目的灵魂，读代码时用它当试金石：凡是看到「检索排除候选」靠的是 glob 模式而不是提示词叮嘱，看到「approved 页永不被候选覆盖」靠的是 sidecar 文件模型而不是警告——都是这条原则的落实。</p>
+
+  <h3>数据流：一次治理 run 里各部件如何协同</h3>
+<pre class="diagram">raw/(证据)                    agent(判断)                  wiki/(结论)
+   │                             │                            │
+   │  govern.mjs plan ──────────▶│ 六列表格:pending/anomalies/│
+   │   (机械扫描,纯 stdout JSON) │  errors/review_queue/      │
+   │                             │  human_lists/suppressed    │
+   │                             ▼                            │
+   │  读 raw ──────────────────▶ 分类(classify-page.md)      │
+   │                             起草(draft-source-page.md)  │
+   │                             + prompts 注入 GOVERNANCE.md│
+   │                             ▼                            │
+   │  validate.mjs --file ◀───── 每篇草稿 fail-closed 校验    │
+   │   (通过/拒绝,exit 0/1)     ▼                            │
+   │                      语义检查(semantic-check.md)        │
+   │                             必须输出结构化证据            │
+   │                             ▼                            │
+   │                      低风险 → record-decision 记录 ─────▶ approved 落盘
+   │                      有风险 → 写 sidecar ──────────────▶ *.candidate.md
+   │                             ▼                            │
+   │  render.mjs report ────────▶ 裁决 HTML(人审)            │
+   │  govern.mjs rebuild-index ─────────────────────────────▶ index.md 重建</pre>
+  <p>脚本的共同工程约定（spec §1.2)：零依赖单文件 <code>.mjs</code>、stdout 恒为 JSON、退出码 <code>0/1/64/65</code>、错误消息精确可操作且绝不含密钥。<strong>没有任何脚本被自动执行</strong>——都是 agent 通过宿主终端能力调用的。</p>
+
+  <h3>五个脚本的分工</h3>
+  <div class="tbl-wrap"><table>
+    <thead><tr><th>脚本</th><th>干什么</th><th>不改它的情况下你要知道的</th></tr></thead>
+    <tbody>
+      <tr><td><code>acquire.mjs</code></td><td>Jira/Confluence/OpenWiki → raw/</td><td>最大的一只（连接器逻辑）；选择器嗅探、增量 detect、两击删除都在这</td></tr>
+      <tr><td><code>validate.mjs</code></td><td>fail-closed 契约校验</td><td>govern 模式和 distill 模式两套检查集；含重融护栏；<code>splitFrontmatter</code>/<code>serializeFrontmatter</code> 被测试直接 import</td></tr>
+      <tr><td><code>govern.mjs</code></td><td>sweep/plan/rebuild-index/record-decision</td><td>run 锁（<code>run.lock</code>,2h 自动回收）、六列计划表、决策记录</td></tr>
+      <tr><td><code>render.mjs</code></td><td>裁决报告 + 静态站点</td><td>全部动态内容实体转义；数据构建期嵌入，无运行时 fetch</td></tr>
+      <tr><td><code>install.mjs</code></td><td>投影 skill 到 <code>~/.agents/skills/</code></td><td>junction/symlink 优先，整目录拷贝兜底（版本戳防误覆盖）</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>九个 prompt 模板：agent 的「思考框架」</h3>
+  <p><code>prompts/</code> 下的文件不是给人看的文档，是 SKILL.md 各步骤点名加载的工作指令：<code>classify-page</code>（分类）、<code>draft-source-page</code>/<code>draft-synthesis</code>/<code>draft-concept</code>/<code>extract-entity</code>（四类起草）、<code>semantic-check</code>（语义冲突检查，强制结构化输出）、<code>govern-decide</code>（用先例 few-shot 自动裁决重复情况）、<code>distill-chat</code>（蒸馏）、<code>query-rewrite</code>（检索改写，CSQE 规则的载体）。</p>
+  <p><code>GOVERNANCE.md</code>(KB 侧，用户自写）在治理类 prompt 里以 <code>{{brief}}</code> 注入——这是用户不动 skill 代码就能定制治理行为的口子。</p>
+
+  <h3>改代码的第一站</h3>
+  <ul>
+    <li>改<strong>行为/流程</strong> → 先改 <code>SKILL.md</code> + 对应 <code>prompts/</code>，再改 <code>spec</code>（双语两版），脚本最后；</li>
+    <li>改<strong>契约（字段/规则）</strong> → 先改 <code>spec/spec.zh-CN.md</code> + <code>spec.en.md</code>，评估 <code>contract_version</code> 是否 bump，再同步 SKILL.md、validate.mjs、模板；</li>
+    <li>改<strong>任何上面两者</strong> → 跑测试（见 <a class="inl" href="#d06">06 · 测试与扩展</a>)，更新 CHANGELOG。</li>
+  </ul>
+  </div>
+  <div class="next-ch reveal"><a href="#d02">下一章 · KB 契约导读 <span class="arrow">→</span></a></div>
+</section>
+
+<!-- ---- D02 ---- -->
+<section class="chapter" id="d02">
+  <div class="ch-head d reveal">
+    <div class="ch-num">02</div>
+    <div class="ch-track">开发者之旅 · 第二章</div>
+    <h2>KB 契约导读</h2>
+    <div class="ch-sub">本章不复述契约——只告诉你按什么顺序读 spec、每节为什么存在</div>
+  </div>
+  <div class="reveal">
+  <h3>第一遍：骨架（约 20 分钟）</h3>
+  <ol>
+    <li><strong>§0 概述</strong>——五大能力 + 设计原则。读完能向别人解释这个项目。</li>
+    <li><strong>§2.1 目录树</strong>——KB 的物理结构。<code>raw/</code> vs <code>wiki/</code> vs <code>.kb/</code> 三层职责是整个系统的地基：
+      <ul>
+        <li><code>raw/</code> 证据层：1:1 源文档、来源语言、agent 永不改写（只追加/覆盖拉取）;</li>
+        <li><code>wiki/</code> 策展层：govern 所有的结论层，手改不保证存活；</li>
+        <li><code>.kb/</code> 机器衍生品 + 裁决记忆，gitignore——<strong>不进版本控制是刻意的</strong>：它是运行状态，不是知识。</li>
+      </ul></li>
+    <li><strong>§2.3 wiki 页面 frontmatter 与状态机</strong>——四类页面 + 候选 sidecar 模型。这是全 spec 最重要的一节，与 <a class="inl" href="#d04">04 · 治理与候选状态机</a> 对照读。</li>
+    <li><strong>§4.1 runbook 七步</strong>——治理 run 的完整步骤。和 SKILL.md 第 4 章是同一件事的两种表述：spec 讲「必须发生什么」,SKILL.md 讲「agent 具体怎么做」。</li>
+  </ol>
+
+  <h3>第二遍：按需深挖</h3>
+  <div class="tbl-wrap"><table>
+    <thead><tr><th>你想搞懂</th><th>读</th></tr></thead>
+    <tbody>
+      <tr><td>raw 身份五元组、content_hash 计算、"manual" 豁免</td><td>§2.2</td></tr>
+      <tr><td>index.md 为什么是机械衍生品、行格式</td><td>§2.4</td></tr>
+      <tr><td>审计日志的 actor/action 受控词表</td><td>§2.5</td></tr>
+      <tr><td>裁决记忆三件套的文件格式</td><td>§2.6</td></tr>
+      <tr><td>kb.json 每个字段、GOVERNANCE.md 注入点</td><td>§2.7</td></tr>
+      <tr><td>提交纪律（谁提交、add 什么、message 格式）</td><td>§2.8</td></tr>
+      <tr><td>连接器行为契约（嗅探、两击删除、附件、降级宏）</td><td>§3、§3.1</td></tr>
+      <tr><td>裁决回环的回复文本协议、五动作文件操作</td><td>§4.2</td></tr>
+      <tr><td>prompt 模板清单与注入变量</td><td>§4.3</td></tr>
+      <tr><td>蒸馏的双附录结构、3 万字符闸门</td><td>§5</td></tr>
+      <tr><td>HTML 安全硬要求（为什么全转义）</td><td>§6</td></tr>
+      <tr><td>检索六规则、CSQE/HyDE 禁令</td><td>§7</td></tr>
+      <tr><td>口令总表（用户说什么 → 触发什么）</td><td>§8.1</td></tr>
+      <tr><td>分发、投影、contract_version 检查点</td><td>§9</td></tr>
+      <tr><td>验收 checklist（改完代码对着过一遍）</td><td>§10</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>四类页面：一页全景</h3>
+  <div class="tbl-wrap"><table>
+    <thead><tr><th>页型</th><th>与 raw 的关系</th><th>身份</th><th>关键 frontmatter</th><th>构建方式</th></tr></thead>
+    <tbody>
+      <tr><td><strong>source</strong></td><td>1:1，每篇 raw 必有</td><td><code>source_ref</code> 精确匹配 raw 身份</td><td><code>source_ref</code>、<code>related_topics</code>（聚类钩子）</td><td>起草，可子代理并行</td></tr>
+      <tr><td><strong>synthesis</strong></td><td>N:1，跨源主题叙事</td><td>slug</td><td><code>sources</code>(union 语义）</td><td><strong>增量折叠</strong>，严格串行（见 <a class="inl" href="#d03">03</a>)</td></tr>
+      <tr><td><strong>concept</strong></td><td>跨文档共享抽象的定义</td><td>slug（注册表查重，别名命中即合并）</td><td><code>sources</code>、<code>aliases</code></td><td>union-merge，同折叠纪律</td></tr>
+      <tr><td><strong>entity</strong></td><td>命名实体 + 类型化关系</td><td>slug</td><td><code>kind</code>、<code>relations</code>(target 是 slug)</td><td>union-merge，同折叠纪律</td></tr>
+    </tbody>
+  </table></div>
+  <p>贯穿规则：非 source 页的 <code>sources</code> 只并集、<code>created_at</code> 永保留；slug 全局唯一、小写 kebab-case、机械校验；正文互链用 Obsidian 兼容的 <code>[[slug|display]]</code>，合并时全库机械改写反向链接（<code>archive/</code> 除外——冻结记录永不动）。</p>
+
+  <h3>契约的演进纪律</h3>
+  <ul>
+    <li>契约只<strong>增量兼容</strong>地改；破坏性变更 → CHANGELOG 迁移说明 + 考虑 <code>contract_version</code> bump;</li>
+    <li>v1.1 改了 <code>max_sources_per_cluster</code> 的<strong>语义</strong>（覆盖上限 → 每折批大小）但键名不变、旧 kb.json 照常解析，所以<strong>没有</strong> bump contract_version——这是「语义变了但文件兼容」时怎么处理的活例；</li>
+    <li>每个脚本启动时比对内置契约版本与 kb.json 声明版本，skill 更新于 KB → exit 65 + 迁移指引。</li>
+  </ul>
+
+  <h3>术语对齐</h3>
+  <p>改代码前建议过一遍项目根的 <code>CONTEXT.md</code>——它是术语表（ubiquitous language)，不收实现决策。当你发现自己在注释里发明「草稿页」「临时页」这类词时，停下来查一下：那叫 <strong>candidate / sidecar</strong>。</p>
+  </div>
+  <div class="next-ch reveal"><a href="#d03">下一章 · fold 机制 <span class="arrow">→</span></a></div>
+</section>
+
+<!-- ---- D03 ---- -->
+<section class="chapter" id="d03">
+  <div class="ch-head d reveal">
+    <div class="ch-num">03</div>
+    <div class="ch-track">开发者之旅 · 第三章</div>
+    <h2>fold 机制：v1.1 为什么用折叠取代截断</h2>
+    <div class="ch-sub">理解当前代码形态的钥匙 · 故事见 CHANGELOG [1.1.0],契约见 spec §4.1 steps 3–4</div>
+  </div>
+  <div class="reveal">
+  <h3>问题：截断策略在第一次真实使用中崩了</h3>
+  <p>v1.0 的设计：synthesis 一次性覆盖整个簇，但设了 ≤6 源的上限，装不下就截断，并在下一轮把「未覆盖 N 篇」列为强制候选。</p>
+  <p>第一次真实使用（Weft 项目，47 篇 openwiki raw）的证据：<strong>9 个簇里 7 个撞了上限</strong>，裁决队列被 "N sources not covered" 候选淹没。每个候选都要人看，但人能做的决定无非是「好，下轮继续」——<strong>这不是判断，是确认噪音</strong>。设计原则「自动化优先，只在必要时裁决」被自己的实现违反了。</p>
+
+  <h3>解法：把「一次覆盖」改成「增量折叠」</h3>
+  <p>核心想法来自版本控制：与其一次性写一篇大页面，不如<strong>每次折入一个源，每折过闸门，页面是折叠链的累积结果</strong>。</p>
+<pre class="diagram">fold 1:  ∅ ──折入源 A──▶ 页面 v1 ──双闸门──▶ 落盘
+fold 2:  页面 v1 ──折入源 B──▶ 页面 v2 ──双闸门──▶ 落盘
+fold 3:  页面 v2 ──折入源 C──▶ 冲突!──▶ 断链:v2 保持,C 折进候选</pre>
+
+  <h4>每折的纪律（spec §4.1 step 4)</h4>
+  <ol>
+    <li><strong>先读当前页</strong>——它是之前所有折叠的 merge base。<strong>跳过这次读取就是契约违规</strong>(agent 提示词层面强制）;</li>
+    <li><strong>按 <code>source_version</code> 升序读下一源</strong>——旧说法先进，新说法后落。为什么升序？让冲突<strong>恰好暴露在相撞的那一折</strong>：如果新文档改口了，你会在折入它的那一折看到它和既有页面矛盾，而不是事后发现页面里有两种说法；</li>
+    <li><strong>union-merge</strong>:<code>sources</code> 只并集，<code>created_at</code> 保留，正文重新融合时<strong>优先把新源的结论作为带来源标签的追加</strong>，而不是整体重写（护栏机械检查这一点）;</li>
+    <li><strong>双闸门，每折必过</strong>:
+      <ul>
+        <li><code>validate.mjs --file</code>，含<strong>重融护栏</strong>(refusion-retention guardrail)：新页面若丢掉 base 的 wikilink/sources，或 &gt;20% 关键事实行消失 → 校验失败；</li>
+        <li><code>semantic-check.md</code>，必须输出结构化证据 <code>{conflicts:[…]}</code> 或 <code>{no_conflict:true}</code>——<strong>没有结构化输出 = 没有检查 = 强制候选</strong>。</li>
+      </ul></li>
+  </ol>
+
+  <h4>断链与续跑</h4>
+  <ul>
+    <li><strong>断链</strong>：矛盾 / 护栏破损 / 无结构化证据 → 链停在这一折：最后好页保持，问题折落候选（review_note 首行 <code>conflict: &lt;kind&gt; | parties: &lt;a&gt; vs &lt;b&gt;</code>，机器可解析，render 的冲突块靠它），剩余源下轮续；</li>
+    <li><strong>续跑靠结构，无游标文件</strong>：页面 frontmatter 的 <code>sources:</code> 就是游标。<code>簇成员 − 页.sources</code> = 下轮的剩余工作。少一个状态文件，就少一个会和现实漂移的状态。</li>
+  </ul>
+
+  <h4>风险红线的相应修订</h4>
+  <p>通过全部闸门的一折（①sources 只并 ②护栏过 ③明确 no_conflict）视同<strong>纯追加</strong> → 可自动批准。注意 <code>no_conflict</code> 从来不是单独放行理由：改写/删除即使语义检查无冲突也强制候选。</p>
+
+  <h3>设计层面的三个收获（可迁移到别的项目)</h3>
+  <ol>
+    <li><strong>把人审从「流程的常态产物」中摘出去。</strong>截断策略让每个大簇必然产生人审；折叠策略让人审只在<strong>真有矛盾</strong>时出现。衡量自动化设计健康度的指标：每 run 产生的候选里，「需要判断」和「只需确认」的比例。</li>
+    <li><strong>批量上限换成增量批次，语义完全不同。</strong><code>max_sources_per_cluster</code> 从「这一簇最多覆盖几篇」（覆盖上限 → 必然截断）变成「每折折入几篇」（批大小 → 覆盖总是全量）。键名没改、kb.json 不 bump——兼容性靠「旧值在新语义下仍然合法」达成。</li>
+    <li><strong>进度编码进数据结构，而不是进度文件。</strong><code>sources:</code> 清单天然就是游标。当你想引入一个 <code>progress.json</code> 时，先问：现有结构里有没有一个字段已经在记录同样的事？</li>
+  </ol>
+
+  <h3>代码里的落点</h3>
+  <ul>
+    <li>折叠纪律的提示词载体：<code>prompts/draft-synthesis.md</code>(v1.1 fold-mode 重写）、<code>prompts/draft-concept.md</code>、<code>prompts/extract-entity.md</code>;</li>
+    <li>机械闸门：<code>scripts/validate.mjs</code>（重融护栏在 govern 检查集里）;</li>
+    <li>串行纪律：SKILL.md ch.4 step 3.10 明确子代理并行<strong>只</strong>适用于 source 页起草——非 source 页永不并行；</li>
+    <li>折叠顺序的语义：<code>source_version</code> 升序，见 spec §4.1。</li>
+  </ul>
+  </div>
+  <div class="next-ch reveal"><a href="#d04">下一章 · 治理与候选状态机 <span class="arrow">→</span></a></div>
+</section>
+
+<!-- ---- D04 ---- -->
+<section class="chapter" id="d04">
+  <div class="ch-head d reveal">
+    <div class="ch-num">04</div>
+    <div class="ch-track">开发者之旅 · 第四章</div>
+    <h2>治理与候选状态机</h2>
+    <div class="ch-sub">「correctness by structure」原则最集中的体现 · 契约:spec §2.3、§4.2</div>
+  </div>
+  <div class="reveal">
+  <h3>状态机全景</h3>
+<pre class="diagram">                    治理 run 起草
+                         │
+            ┌────────────┴─────────────┐
+            ▼ 低风险(新页/纯追加+无冲突) ▼ 有风险(改写/删除/合并/矛盾/无证据)
+        approved                    candidate
+        (页面文件)              (*.candidate.md sidecar)
+            │                            │
+            │                  ┌─────────┼──────────┬─────────┬──────────┐
+            │                  ▼ 人裁决  ▼          ▼         ▼          ▼
+            │               approve   reject   edit-then-  archive-  keep-both
+            │              (原子替换)  (移 archive) approve  loser     (登记平行对)
+            ▼                  │          │        │         │
+         archived ◀────────────┴──────────┴────────┴─────────┘
+        (仅人裁决可达;冻结记录,检索不可见,内部链接永不改写)</pre>
+  <p>状态字段的机械约束：页面文件只可能是 <code>approved | archived</code>;sidecar 只可能是 <code>candidate</code>;<code>approved → archived</code> 只能由人裁决触发。<strong>没有任何自动路径能归档一篇已批准页。</strong></p>
+
+  <h3>sidecar 模型解决的原始问题</h3>
+  <p>旧设计（v1.0 前史）：候选直接以覆盖提案形式存在，批准后从 git 恢复旧版（reject-and-restore)。问题：<strong>候选期内 approved 页处于「将被覆盖」的不确定态</strong>，而且恢复逻辑复杂易错。</p>
+  <p>sidecar 模型的结构性解法：</p>
+  <ul>
+    <li>候选 = 目标页旁边的独立文件 <code>&lt;slug&gt;.candidate.md</code>，带 <code>base:</code>（覆盖锚点 + diff 基底，新页为 <code>null</code>，<strong>键必须存在</strong>）和 <code>review_note:</code>（为什么是候选，裁决 HTML 首先展示）;</li>
+    <li><strong>approved 页文件永不被候选触碰</strong>——approve 时写临时文件再 rename 原子替换；reject 时把 sidecar 移进 archive，原页根本不需要「恢复」(reject-and-restore 随之退役）;</li>
+    <li><strong>检索不可见性是 glob 排除，不是纪律</strong>：枚举模式 <code>wiki/{sources,syntheses,concepts,entities}/**</code> 结构性排除 <code>archive/</code>，再机械丢弃 <code>*.candidate.md</code>。SKILL.md 检索 Rule 0 明确禁止「枚举全部然后凭意志力跳过」。</li>
+  </ul>
+
+  <h3>裁决记忆：<code>.kb/govern/</code></h3>
+  <p>对抗「agent 跨会话无记忆」的结构化补丁，gitignore（运行状态，非知识）:</p>
+  <div class="tbl-wrap"><table>
+    <thead><tr><th>文件</th><th>内容</th><th>谁消费</th></tr></thead>
+    <tbody>
+      <tr><td><code>decisions.jsonl</code></td><td>全部裁决历史；human 行<strong>强制带 reason</strong>,agent 行强制带 <code>cited</code>（先例 id 数组，可为空但键必须在）</td><td><code>govern-decide.md</code> 的 few-shot 先例源；裁决 HTML 的「该页历史」</td></tr>
+      <tr><td><code>source-tombstones.json</code></td><td>archive-loser 败方 raw 的墓碑</td><td>acquire：被墓碑压制的 raw 不再拉取（<code>--force</code> 可翻案，翻案记 log)</td></tr>
+      <tr><td><code>conflict-dismissals.json</code></td><td>keep-both 登记的平行文档对（规范化、排序存储）</td><td>plan：已登记对不再报 conflict-pair</td></tr>
+      <tr><td><code>slug-registry.json</code> / <code>topic-registry.json</code></td><td>slug/topic 规范化查存</td><td>起草时防重复：别名命中 = 确定合并</td></tr>
+      <tr><td><code>runs.jsonl</code></td><td>run 元数据</td><td>overview 视图的 run 历史</td></tr>
+      <tr><td><code>run.lock</code></td><td>run 互斥锁，2h 或死进程自动回收</td><td>govern 脚本</td></tr>
+    </tbody>
+  </table></div>
+  <p><strong>先例矛盾 → fail-closed</strong>：同页/同冲突类型出现相反动作的先例时，不平均、不选边——强制进候选交人。judgment 的模糊地带永远向人审方向塌缩。</p>
+
+  <h3>自动化优先的具体机制</h3>
+  <p>治理不是「什么都问人」。<code>govern-decide.md</code> prompt 拿先例当 few-shot，先尝试自动裁决重复出现的情况；只有<strong>真正新颖</strong>或<strong>先例矛盾</strong>的案例才进裁决 HTML。衡量这个机制是否在工作的指标：同类案例第二次出现时还打不打扰用户。</p>
+
+  <h3>一个容易踩的坑：review_queue 与 archive</h3>
+  <p>v1.1 修过一个真实 bug:<code>govern plan</code> 的 review_queue glob 曾把 <code>wiki/archive/*.candidate.md</code>（已归档候选 = 冻结记录）重新捞回待裁决队列。教训：<strong>凡是 glob，先想 archive/ 这个「结构性例外」</strong>——它是 KB 里唯一「内容在 wiki/ 下但语义上不属于 wiki/」的地方。</p>
+
+  <h3>手工改 wiki/ 的检测</h3>
+  <p>plan 的 <code>human_lists</code> 里有 hand-edit 检测：diff <code>wiki/</code> 与最近一次 <code>govern: run</code> 提交。这依赖两个前置纪律：① 每 run 末尾提交 <code>govern: run &lt;ISO8601&gt;</code>;② KB 是 git 仓库。所以「KB 必须 git init」不是仪式，是检测机制的传感器。</p>
+  </div>
+  <div class="next-ch reveal"><a href="#d05">下一章 · 实战故事 <span class="arrow">→</span></a></div>
+</section>
+
+<!-- ---- D05 ---- -->
+<section class="chapter" id="d05">
+  <div class="ch-head d reveal">
+    <div class="ch-num">05</div>
+    <div class="ch-track">开发者之旅 · 第五章</div>
+    <h2>实战故事：一次 ADR 编号冲突的完整治理</h2>
+    <div class="ch-sub">真实案例,已脱敏——只保留冲突结构,不涉及业务细节</div>
+  </div>
+  <div class="reveal">
+  <h3>背景</h3>
+  <p>2026-08，某项目（代号 Weft，私有仓库）用 OpenWiki 在仓库里自动生成了 47 篇 wiki 页（架构总览、各 ADR 决策记录等）。通过 OpenWiki 连接器全部拉入 raw 层 → 一次治理 run 产出：</p>
+  <ul>
+    <li><strong>47 篇 source 页</strong>（全部自动批准——新页面，低风险）;</li>
+    <li><strong>9 个簇 → 9 篇 synthesis</strong>:8 篇折叠链全程无冲突，自动批准；</li>
+    <li><strong>1 篇 architecture synthesis 停在候选</strong>——本章主角。</li>
+  </ul>
+
+  <h3>冲突长什么样</h3>
+  <p>上游文档集的 ADR 编号在<strong>跨文档引用时不一致</strong>：同一篇决策，文档甲称 ADR-0003，文档乙称 ADR-0004，另有一份索引又指向 ADR-0012。（具体决策内容已略去，结构就是「同一对象，三个编号」。)</p>
+  <p>这不是 LLM 编造的错误——<strong>上游源文档本身就互相矛盾</strong>。</p>
+
+  <h3>机制如何一环扣一环地接住它</h3>
+  <ol>
+    <li><strong>折叠按 <code>source_version</code> 升序进行。</strong>较早的源先折入，页面先采用其中一个编号体系；</li>
+    <li><strong>折到引用不同编号的源时，矛盾恰好暴露在那一折</strong>——这正是升序折叠的设计意图：冲突定位到具体的源对，而不是混在成品页面里；</li>
+    <li><strong>semantic-check 输出结构化冲突证据</strong> <code>{conflicts:[…]}</code>，点名两个相撞的源；</li>
+    <li><strong>断链</strong>：最后一个无冲突的折叠保持落盘，问题折变成 sidecar 候选，<code>review_note</code> 首行是机器可解析的 <code>conflict: &lt;kind&gt; | parties: &lt;a&gt; vs &lt;b&gt;</code>;</li>
+    <li><strong>裁决报告</strong>把双方并排展示（冲突组），附溯源证据（两源 raw 的原文节录）和该页裁决历史；</li>
+    <li><strong>剩余源自动顺延</strong>——<code>簇成员 − 页.sources</code> 就是下轮的剩余工作，不需要任何人记录「折到第几篇了」。</li>
+  </ol>
+  <p>注意第 4 步的分寸：<strong>系统没有试图「解决」冲突</strong>（它无法知道哪个编号是对的——可能上游自己都没统一），而是把页面停在最后一致状态，把判断题原样交给能判断的人。</p>
+
+  <h3>这个案例验证了哪些设计决策</h3>
+  <div class="tbl-wrap"><table>
+    <thead><tr><th>设计</th><th>验证点</th></tr></thead>
+    <tbody>
+      <tr><td>升序折叠</td><td>冲突暴露在相撞的那一折，review_note 能精确点名源对</td></tr>
+      <tr><td>断链而非中止</td><td>8 篇 synthesis 不受影响照常落盘；出问题的簇保留最后好状态，不是废墟</td></tr>
+      <tr><td>结构化证据强制</td><td>若 semantic-check 没有输出 <code>{conflicts}</code> 结构，按规则会强制候选——本例中它有，所以候选理由精确而非「可疑」</td></tr>
+      <tr><td>续跑靠结构</td><td>冲突裁决后，剩余源靠 <code>页.sources</code> 游标自然续折，无额外状态</td></tr>
+      <tr><td>review_note 机器可解析首行</td><td>render 的冲突块直接消费它生成并排对比</td></tr>
+    </tbody>
+  </table></div>
+
+  <h3>也暴露了边界</h3>
+  <p>这次实战同时是 v1.1 的诞生原因：最初 9 个簇里 7 个在旧截断策略下会产生「未覆盖 N 篇」候选（见 <a class="inl" href="#d03">03 · fold 机制</a>)。<strong>同一批真实数据，先在 v1.0 上证明了截断不可行，再在 v1.1 上证明了折叠可行</strong>——47 篇全量覆盖，只有 1 篇因真冲突进候选。候选率从「7/9 簇」降到「1/9 簇」，且那一个候选是真正有判断价值的。</p>
+
+  <h3>留给读者的思考题</h3>
+  <ul>
+    <li>如果上游后来修正了编号（统一为 ADR-0003),<code>source_version</code> 更新后再次治理，折叠链会如何收敛？（提示：<code>updated</code> 的 raw 会让对应 source 页进入 <code>stale</code>,synthesis 的哪些折需要重做？)</li>
+    <li>如果你是裁决者，这个案例该选 <code>edit-then-approve</code>（统一编号后批准）、<code>keep-both</code>（记录上游不一致为已知事实），还是回上游修文档再治理？各自的先例会怎么影响以后的自动裁决？</li>
+  </ul>
+  </div>
+  <div class="next-ch reveal"><a href="#d06">下一章 · 测试与扩展 <span class="arrow">→</span></a></div>
+</section>
+
+<!-- ---- D06 ---- -->
+<section class="chapter" id="d06">
+  <div class="ch-head d reveal">
+    <div class="ch-num">06</div>
+    <div class="ch-track">开发者之旅 · 第六章(末章)</div>
+    <h2>测试与扩展</h2>
+    <div class="ch-sub">改代码后怎么验证,新能力往哪里加</div>
+  </div>
+  <div class="reveal">
+  <h3>测试地图</h3>
+  <p>测试在仓库根的 <code>tests/</code>（注意：不在 skill 目录里——skill 目录是交付物，测试是开发产物）,Node 内置 test runner，零依赖：</p>
+<pre><code>node --test tests/</code></pre>
+  <div class="tbl-wrap"><table>
+    <thead><tr><th>文件</th><th>覆盖</th><th>对应契约</th></tr></thead>
+    <tbody>
+      <tr><td><code>contract.test.mjs</code></td><td>KB 契约校验：frontmatter、slug、状态白名单</td><td>spec §2</td></tr>
+      <tr><td><code>validate.test.mjs</code></td><td>validate 两套检查集（govern/distill)、重融护栏</td><td>spec §2.2/§5</td></tr>
+      <tr><td><code>acquire.test.mjs</code></td><td>选择器嗅探、增量、两击删除、OpenWiki 扁平化</td><td>spec §3</td></tr>
+      <tr><td><code>govern.test.mjs</code></td><td>sweep/plan 六列/rebuild-index/record-decision、run 锁</td><td>spec §4</td></tr>
+      <tr><td><code>render.test.mjs</code></td><td>裁决报告与站点的 HTML 安全（转义、href 白名单）</td><td>spec §6</td></tr>
+      <tr><td><code>install.test.mjs</code></td><td>投影模式、版本戳、拒绝覆盖外来目录</td><td>spec §9</td></tr>
+      <tr><td><code>e2e.test.mjs</code></td><td><strong>全链路</strong>:fixtures → acquire → govern run → 裁决 → render</td><td>spec §10</td></tr>
+      <tr><td><code>helpers.mjs</code></td><td>测试基建：<code>runScript</code>、<code>git</code>、临时 KB 构造、FIXTURES 定位</td><td>—</td></tr>
+    </tbody>
+  </table></div>
+  <p>e2e 的写法值得读：文件头注释明确记录了<strong>降级路径与脚本路径的三个文档化差异</strong>(content_hash: "manual" / 降级禁自动批准 / agent 代提交）——机器只校验脚本路径的产物，降级路径的承诺是 SKILL.md 的文档义务。这种「什么能机测、什么只能靠文档诚实」的划分本身就是设计。</p>
+
+  <h3>已知问题（诚实的待办)</h3>
+  <ul>
+    <li><strong><code>install.test.mjs</code> 拷贝模式漂移测试 1/8 失败</strong>——v1.1 前就存在、未调查。不是 v1.1 引入的回归，但它躺在那里等着有人查。想为项目做贡献？这是个很好的第一题。</li>
+  </ul>
+
+  <h3>扩展指南</h3>
+  <h4>加一个新 connector（如 Zephyr Scale、GitLab wiki)</h4>
+  <ol>
+    <li><code>spec</code> §3 加一节连接器规范：选择器形式、认证、增量语义、删除语义（两击还是直接删？)、附件策略；</li>
+    <li><code>scripts/acquire.mjs</code> 加实现——遵守共同约定：stdout JSON、退出码、detect-first、commit 纪律、错误消息精确无密钥；</li>
+    <li>raw frontmatter 的 <code>source</code> 白名单加新值（spec §2.2 + validate.mjs);</li>
+    <li>fixtures 加样本，<code>acquire.test.mjs</code> 加用例；</li>
+    <li>SKILL.md ch.3 加 CLI 形式和手动降级路径（<strong>用户粘贴内容时 agent 怎么手工归一化</strong>——这是最容易被忘的一步）。</li>
+  </ol>
+  <h4>加/改一个 prompt 模板</h4>
+  <ol>
+    <li><code>prompts/</code> 下新建或修改，保持「结构化输出契约」传统（如 semantic-check 的 <code>{conflicts}</code>/<code>{no_conflict}</code>)——<strong>无结构化输出 = 未执行</strong>是 fail-closed 的支柱；</li>
+    <li>SKILL.md 对应步骤点名引用文件名；</li>
+    <li>spec §4.3 模板清单同步；</li>
+    <li>没有直接单测——e2e 是兜底。改 prompt 后至少手动跑一遍完整治理验证。</li>
+  </ol>
+  <h4>改契约（字段/规则）</h4>
+  <p>最高纪律区：spec 双语两版同步 → 评估 <code>contract_version</code>(v1.1 的「语义变、键名不变、不 bump」是参照案例）→ SKILL.md → validate.mjs → 模板 → CHANGELOG（破坏性变更必须带迁移说明）→ 本手册（见下）。</p>
+
+  <h3>文档同步约定</h3>
+  <p>本手册不是契约权威——spec 和 SKILL.md 才是。项目根的 <code>CONTEXT.md</code> 里有一条约定：改 spec / SKILL.md / CHANGELOG 时必须检查 <code>docs/</code> 是否受影响。如果你在 Claude 会话里改这些东西，agent 会主动提醒你；如果你手工改，请自觉执行。</p>
+
+  <h3>收尾：开发者之旅的三句话总结</h3>
+  <ol>
+    <li><strong>SKILL.md 是规范，脚本是增强，prompts 是判断</strong>——改东西先想清楚动的是哪一层；</li>
+    <li><strong>一切正确性尽量下沉为结构</strong>(glob 排除、sidecar、白名单、原子 rename)，提示词叮嘱是最后手段；</li>
+    <li><strong>人审是最贵资源</strong>——每个设计决策都值得问：这会产生「只需确认」的候选噪音吗？</li>
+  </ol>
+  </div>
+  <div class="next-ch reveal"><a href="#cover">回到卷首 <span class="arrow">↑</span></a></div>
+</section>
+
+</article>
+
+<footer>
+  <div class="f-seal">教学手册</div>
+  <div>llm-wiki · skill v1.1 / KB contract_version 1 · 2026-08<br>
+  契约权威:<code>spec/spec.zh-CN.md</code> · 运行规范:<code>llm-wiki/SKILL.md</code> · 源文档:<code>docs/</code> 目录 13 篇 Markdown</div>
+</footer>
+</div>
+
+<script>
+// 阅读进度条
+const prog = document.getElementById('progress');
+addEventListener('scroll', () => {
+  const h = document.documentElement;
+  prog.style.width = (h.scrollTop / (h.scrollHeight - h.clientHeight) * 100) + '%';
+}, {passive:true});
+
+// 章节渐入
+const io = new IntersectionObserver(es => es.forEach(e => {
+  if (e.isIntersecting) { e.target.classList.add('in'); io.unobserve(e.target); }
+}), {threshold:.08});
+document.querySelectorAll('.reveal').forEach(el => io.observe(el));
+
+// 目录 scrollspy
+const links = [...document.querySelectorAll('#toc a[data-spy]')];
+const secs = links.map(a => document.getElementById(a.dataset.spy)).filter(Boolean);
+const spy = new IntersectionObserver(es => {
+  es.forEach(e => {
+    if (e.isIntersecting) {
+      links.forEach(a => a.classList.toggle('active', a.dataset.spy === e.target.id));
+    }
+  });
+}, {rootMargin:'-20% 0px -70% 0px'});
+secs.forEach(s => spy.observe(s));
+
+// 移动端目录开关
+const toc = document.getElementById('toc');
+document.getElementById('toc-toggle').addEventListener('click', () => toc.classList.toggle('open'));
+toc.addEventListener('click', e => { if (e.target.tagName === 'A') toc.classList.remove('open'); });
+</script>
+</body>
+</html>

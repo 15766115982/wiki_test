@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>治理裁决报告 — 2026-08-12 run</title>
+<style>
+  :root { --bg:#f6f7f9; --card:#fff; --line:#e2e5ea; --ink:#1f2329; --dim:#6b7280;
+          --red:#c0392b; --red-bg:#fdecea; --green:#1e7e34; --green-bg:#e6f4ea;
+          --amber:#9a6a00; --amber-bg:#fff4d6; --blue:#1a5fb4; --blue-bg:#e8f0fe; }
+  * { box-sizing:border-box; }
+  body { margin:0; font:14px/1.6 -apple-system,"Segoe UI","Microsoft YaHei",sans-serif;
+         background:var(--bg); color:var(--ink); }
+  header { background:var(--card); border-bottom:1px solid var(--line); padding:12px 20px;
+           display:flex; gap:24px; align-items:baseline; flex-wrap:wrap; }
+  header h1 { font-size:16px; margin:0; }
+  header .stat { color:var(--dim); } header .stat b { color:var(--ink); }
+  .layout { display:flex; min-height:calc(100vh - 53px); }
+  nav { width:300px; border-right:1px solid var(--line); background:var(--card); padding:12px; }
+  nav h2 { font-size:12px; color:var(--dim); text-transform:uppercase; margin:8px 4px; }
+  .cand { display:block; width:100%; text-align:left; background:none; border:1px solid var(--line);
+          border-radius:8px; padding:10px 12px; margin-bottom:8px; cursor:pointer; }
+  .cand:hover { border-color:var(--blue); }
+  .cand.active { border-color:var(--blue); background:var(--blue-bg); }
+  .cand .t { font-weight:600; display:block; }
+  .chip { display:inline-block; font-size:11px; border-radius:10px; padding:1px 8px; margin-top:4px; }
+  .chip.conflict { background:var(--red-bg); color:var(--red); }
+  .chip.dup { background:var(--amber-bg); color:var(--amber); }
+  .chip.syn { background:var(--blue-bg); color:var(--blue); }
+  main { flex:1; padding:20px 24px; max-width:980px; }
+  .card { background:var(--card); border:1px solid var(--line); border-radius:10px;
+          padding:16px 20px; margin-bottom:16px; }
+  .review-note { border-left:4px solid var(--red); background:var(--red-bg); }
+  .review-note h3, .card h3 { margin:0 0 8px; font-size:13px; color:var(--dim);
+          text-transform:uppercase; letter-spacing:.04em; }
+  .review-note .why { font-size:15px; font-weight:600; color:var(--red); }
+  .diff { font:12.5px/1.5 ui-monospace,Consolas,monospace; border:1px solid var(--line);
+          border-radius:8px; overflow:hidden; }
+  .diff .h { background:#eef1f5; padding:4px 10px; color:var(--dim); }
+  .diff div.l { padding:2px 10px; white-space:pre-wrap; }
+  .diff .del { background:var(--red-bg); color:var(--red); }
+  .diff .add { background:var(--green-bg); color:var(--green); }
+  details { border:1px solid var(--line); border-radius:8px; padding:8px 12px; margin:6px 0; }
+  summary { cursor:pointer; font-weight:600; }
+  .loser-pick label { display:block; border:1px solid var(--line); border-radius:8px;
+          padding:10px 12px; margin:6px 0; cursor:pointer; }
+  .loser-pick input { margin-right:8px; }
+  .hist { color:var(--dim); font-size:13px; }
+  .hist li { margin:4px 0; }
+  .actions { display:flex; gap:8px; flex-wrap:wrap; align-items:center; }
+  .actions button { border:1px solid var(--line); background:var(--card); border-radius:8px;
+          padding:8px 14px; cursor:pointer; font-size:13px; }
+  .actions button:hover { border-color:var(--blue); }
+  textarea { width:100%; border:1px solid var(--line); border-radius:8px; padding:8px;
+             font:inherit; margin-top:8px; }
+  .reply-out { background:#0f1115; color:#c9f2c9; border-radius:8px; padding:12px;
+               font:12.5px ui-monospace,Consolas,monospace; white-space:pre-wrap; }
+  .hint { color:var(--dim); font-size:12.5px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>🗳️ 治理裁决报告</h1>
+  <span class="stat">run: <b>2026-08-12 14:05</b></span>
+  <span class="stat">本轮自动生效: <b>17</b> 页</span>
+  <span class="stat">待你裁决: <b>3</b> 项</span>
+  <span class="stat">人类清单(仅告知): orphan 1 · 悬空链 2</span>
+</header>
+
+<div class="layout">
+<nav>
+  <h2>待裁决队列</h2>
+  <button class="cand active" onclick="show(0,this)">
+    <span class="t">syntheses/payment — 事实冲突</span>
+    <span class="chip conflict">factual conflict</span>
+  </button>
+  <button class="cand" onclick="show(1,this)">
+    <span class="t">sources/pay-table-design-v3 vs v2 — 疑似重复</span>
+    <span class="chip dup">similar version</span>
+  </button>
+  <button class="cand" onclick="show(2,this)">
+    <span class="t">concepts/order-state-machine — 定义变更</span>
+    <span class="chip syn">concept update</span>
+  </button>
+  <h2>已自动生效(17)</h2>
+  <p class="hint" style="padding:0 4px">新增 source 12 · concept 3 · entity 2,均无不矛盾增量。无需操作。</p>
+</nav>
+
+<main id="panel"></main>
+</div>
+
+<script>
+const CASES = [
+{
+  title: "syntheses/payment — 融合时发现事实冲突",
+  note: "冲突点:支付回调最大重试次数。jira/PROJ-55 写 8 次;confluence/102 《支付库表设计 v3》写 5 次。两处均为权威来源,无法自动取舍。",
+  diff: [
+    ["h", "wiki/syntheses/payment.md(候选版 vs 当前 approved 版)"],
+    ["ctx", " 存储:7 张表,pay_order 按 user_id 取模分 16 库 (confluence/102)。"],
+    ["del", "- 可靠性:回调失败指数退避重试,最大 5 次 (confluence/102)。"],
+    ["add", "+ 可靠性:回调失败指数退避重试。重试次数来源冲突:"],
+    ["add", "+   confluence/102 记 5 次,jira/PROJ-55(更新更近)记 8 次。"],
+    ["ctx", " 需求:2026Q3 上线余额支付与组合支付 (confluence/101)。"],
+  ],
+  conflict: {
+    kind: "事实冲突(两处权威来源不一致)",
+    sim: null,
+    parties: [
+      { id:"confluence/102", label:"《支付库表设计 v3》 — 重试 5 次(2026-07-18 更新)" },
+      { id:"jira/PROJ-55",   label:"《支付回调重试》Task — 重试 8 次(2026-08-09 更新)" },
+    ],
+    ask: "选择采信哪一方(败方内容将被标注;也可选「保留两者」让矛盾显式共存):"
+  },
+  sources: ["confluence/101 《支付需求 2026Q3》", "confluence/102 《支付库表设计 v3》", "jira/PROJ-55 《支付回调重试》", "chat/conv-a1b2c3d4 (对话蒸馏:支付超时策略)"],
+  hist: ["2026-07-20 human approve — 首版支付域融合页(理由:内容完整)"]
+},
+{
+  title: "sources/pay-table-design-v3 与 sources/pay-table-design-v2 — 疑似重复",
+  note: "正文相似度 0.83(超过 0.5 阈值)。v3 疑似 v2 的新版本,但源系统版本号未变(anomaly)。建议:合并保留 v3,归档 v2。",
+  diff: [
+    ["h", "v3(候选)vs v2(approved)"],
+    ["del", "- pay_order.status ∈ {INIT, PAYING, PAID, CLOSED}"],
+    ["add", "+ pay_order.status ∈ {INIT, PAYING, PAID, CLOSED, REFUNDING}"],
+    ["add", "+ 新增 pay_refund 表:..."],
+  ],
+  conflict: {
+    kind: "相似版本(疑似同文档新旧版)",
+    sim: "0.83",
+    parties: [
+      { id:"v2-archived", label:"保留 v3(推荐)— 归档 v2,backlink 机械重写指向 v3" },
+      { id:"keep-both",   label:"保留两者 — 确认为平行文档,以后不再标记此对" },
+    ],
+    ask: "合并必须显式选择,无默认:"
+  },
+  sources: ["confluence/102 (v3)", "confluence/097 (v2)"],
+  hist: ["2026-06-30 human approve — v2 首次入库"]
+},
+{
+  title: "concepts/order-state-machine — 概念定义更新",
+  note: "新文档《订单履约流程》(confluence/210)引入 REFUNDING 状态,与现有概念页定义不矛盾但属语义扩展。按先例(d-2026-05-11-003)此类扩展你均批准,故建议自动通过;因触及支付域冲突组,保守起见转 candidate。",
+  diff: [
+    ["h", "concepts/order-state-machine.md"],
+    ["ctx", " 状态机:INIT → PAYING → PAID / CLOSED"],
+    ["add", "+ PAID → REFUNDING(履约退款路径,confluence/210)"],
+  ],
+  conflict: null,
+  sources: ["confluence/102", "confluence/210 《订单履约流程》"],
+  hist: ["2026-05-11 human approve — 状态机扩展先例:语义扩展一律批准(理由:与现有定义不矛盾即可)"]
+}
+];
+
+function show(i, btn) {
+  document.querySelectorAll(".cand").forEach(b => b.classList.remove("active"));
+  btn.classList.add("active");
+  const c = CASES[i];
+  let html = `<div class="card"><h2 style="margin:0">${c.title}</h2></div>`;
+
+  html += `<div class="card review-note"><h3>① 候选原因(review_note)</h3><p class="why">${c.note}</p></div>`;
+
+  html += `<div class="card"><h3>② 与当前生效版的差异</h3><div class="diff">`;
+  for (const [k, t] of c.diff) {
+    if (k === "h") html += `<div class="h">${t}</div>`;
+    else html += `<div class="l ${k === "del" ? "del" : k === "add" ? "add" : ""}">${t}</div>`;
+  }
+  html += `</div></div>`;
+
+  if (c.conflict) {
+    html += `<div class="card"><h3>③ 冲突组裁决(${c.conflict.kind}${c.conflict.sim ? " · 相似度 " + c.conflict.sim : ""})</h3>
+      <p>${c.conflict.ask}</p><div class="loser-pick">`;
+    c.conflict.parties.forEach((p, j) => {
+      html += `<label><input type="radio" name="loser" value="${p.id}">${p.label}</label>`;
+    });
+    html += `</div><p class="hint">⚠️ 无默认选项 —— 不选则本轮跳过此项,下轮再次出现。</p></div>`;
+  }
+
+  html += `<div class="card"><h3>${c.conflict ? "④" : "③"} 溯源证据</h3>`;
+  c.sources.forEach(s => { html += `<details><summary>${s}</summary><p class="hint">(原型:此处展开 raw 原文相关节录)</p></details>`; });
+  html += `</div>`;
+
+  html += `<div class="card"><h3>${c.conflict ? "⑤" : "④"} 该页历史决策</h3><ul class="hist">`;
+  c.hist.forEach(h => { html += `<li>${h}</li>`; });
+  html += `</ul></div>`;
+
+  html += `<div class="card"><h3>裁决动作</h3>
+    <div class="actions">
+      <button>✓ 批准</button><button>✗ 拒绝并恢复</button><button>✎ 编辑后批准</button>
+      <button>🗄 归档败方</button><button>◫ 保留两者</button>
+    </div>
+    <textarea rows="2" placeholder="理由(human 必填,记入 decisions.jsonl)…"></textarea>
+    <p class="hint">HTML 只读不回写。点动作后生成回复文本,粘贴回对话即完成裁决:</p>
+    <div class="reply-out">> approve syntheses/payment,采信 jira/PROJ-55(8 次),
+  理由:PROJ-55 更新更近且为实现方口径</div>
+  </div>`;
+
+  document.getElementById("panel").innerHTML = html;
+}
+show(0, document.querySelector(".cand"));
+</script>
+</body>
+</html>

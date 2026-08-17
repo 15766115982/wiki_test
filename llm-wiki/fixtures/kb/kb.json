@@ -1,0 +1,19 @@
+{
+  "contract_version": 1,
+  "language": "en",
+  "connectors": {
+    "jira": {
+      "base_url": "https://jira.example.com",
+      "pat_env": "JIRA_PAT"
+    },
+    "confluence": {
+      "base_url": "https://wiki.example.com",
+      "pat_env": "CONFLUENCE_PAT"
+    }
+  },
+  "governance": {
+    "max_clusters_per_run": 10,
+    "max_sources_per_cluster": 6,
+    "max_chars_per_source": 2500
+  }
+}
